@@ -90,6 +90,7 @@ class SiteController extends Controller
      */
     public function actionIndex(): string
     {
+        $this->layout = 'landing';
         return $this->render('index');
     }
 
@@ -167,6 +168,7 @@ class SiteController extends Controller
      */
     public function actionAbout(): string
     {
+        $this->layout = 'landing';
         return $this->render('about');
     }
 

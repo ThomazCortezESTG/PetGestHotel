@@ -4,67 +4,44 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 
-use yii\bootstrap5\Nav;
-use yii\bootstrap5\NavBar;
 use yii\helpers\Html;
+use yii\helpers\Url;
 
-$items = [
-    [
-        'label' => 'Home',
-        'url' => ['/site/index'],
-    ],
-    [
-        'label' => 'About',
-        'url' => ['/site/about'],
-    ],
-    [
-        'label' => 'Contact',
-        'url' => ['/site/contact'],
-    ],
-    [
-        'label' => 'Signup',
-        'url' => ['/site/signup'],
-        'visible' => Yii::$app->user->isGuest,
-    ],
-    [
-        'label' => 'Login',
-        'url' => ['/site/login'],
-        'visible' => Yii::$app->user->isGuest,
-    ],
-    [
-        'label' => 'Logout (' . Html::encode(Yii::$app->user->identity?->username) . ')',
-        'url' => ['/site/logout'],
-        'linkOptions' => [
-            'data-method' => 'post',
-            'class' => 'logout',
-        ],
-        'visible' => !Yii::$app->user->isGuest,
-    ],
-];
-
+// Na landing as âncoras são locais (#servicos); nas outras páginas voltam à landing.
+$isHome = Yii::$app->controller->route === 'site/index';
+$anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site/index', '#' => $id]);
 ?>
-<header id="header">
-    <?php NavBar::begin(
-        [
-            'brandLabel' => Yii::$app->name,
-            'brandUrl' => Yii::$app->homeUrl,
-            'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top']
-        ],
-    ) ?>
-    <?= Nav::widget(
-        [
-            'options' => ['class' => 'navbar-nav me-auto'],
-            'encodeLabels' => false,
-            'items' => $items,
-        ],
-    ) ?>
-    <?= Html::button(
-        '&#127769;',
-        [
-            'id' => 'theme-toggle',
-            'class' => 'btn btn-link nav-link fs-5',
-            'aria-label' => 'Switch to dark mode',
-        ],
-    ) ?>
-    <?php NavBar::end() ?>
+<header class="pg-header" id="pg-header">
+    <div class="pg-container pg-header__inner">
+        <a class="pg-logo" href="<?= Url::home() ?>">
+            <?= Html::img('@web/images/petGuestHotelLogo.png', [
+                'alt' => 'PetGestHotel, ir para o início',
+                'class' => 'pg-logo__img',
+            ]) ?>
+        </a>
+
+        <button class="pg-nav-toggle" type="button" aria-expanded="false" aria-controls="pg-nav" aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+        </button>
+
+        <nav class="pg-nav" id="pg-nav" aria-label="Principal">
+            <a href="<?= $anchor('servicos') ?>">Serviços</a>
+            <a href="<?= $anchor('como-funciona') ?>">Como funciona</a>
+            <a href="<?= $anchor('app') ?>">A app</a>
+            <a href="<?= $anchor('perguntas') ?>">Perguntas</a>
+            <a href="<?= Url::to(['/site/about']) ?>"<?= Yii::$app->controller->route === 'site/about' ? ' aria-current="page"' : '' ?>>Sobre nós</a>
+
+            <div class="pg-nav__actions">
+                <?php if (Yii::$app->user->isGuest): ?>
+                    <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/site/login']) ?>">Entrar</a>
+                    <a class="pg-btn pg-btn--primary" href="<?= Url::to(['/site/signup']) ?>">Criar conta</a>
+                <?php else: ?>
+                    <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/reserva/index']) ?>">As minhas reservas</a>
+                    <?= Html::beginForm(['/site/logout'], 'post', ['class' => 'pg-nav__logout']) ?>
+                        <?= Html::submitButton('Sair', ['class' => 'pg-btn pg-btn--primary']) ?>
+                    <?= Html::endForm() ?>
+                <?php endif; ?>
+            </div>
+        </nav>
+    </div>
 </header>

@@ -15,6 +15,10 @@ return [
     'bootstrap' => ['log'],
     'controllerNamespace' => 'frontend\controllers',
     'components' => [
+        'assetManager' => [
+            // acrescenta ?v=<data do ficheiro> ao CSS/JS, para o browser não usar versões antigas
+            'appendTimestamp' => true,
+        ],
         'request' => [
             'csrfParam' => '_csrf-frontend',
         ],

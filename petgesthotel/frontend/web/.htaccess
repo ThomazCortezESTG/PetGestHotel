@@ -1,0 +1,9 @@
+# URLs bonitos do Yii (urlManager com enablePrettyUrl e showScriptName => false)
+RewriteEngine on
+
+# ficheiros e pastas que existem são servidos diretamente
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# o resto vai para o index.php
+RewriteRule . index.php
