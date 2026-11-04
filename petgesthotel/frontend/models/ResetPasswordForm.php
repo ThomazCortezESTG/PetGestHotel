@@ -15,7 +15,9 @@ use yii\base\Model;
 class ResetPasswordForm extends Model
 {
     public string $password = '';
+    public string $password_repeat = '';
     private User|null $_user = null;
+
     /**
      * Creates a form model given a token.
      *
@@ -43,6 +45,14 @@ class ResetPasswordForm extends Model
         return [
             ['password', 'required'],
             ['password', 'string', 'min' => Yii::$app->params['user.passwordMinLength']],
+
+            ['password_repeat', 'required'],
+            [
+                'password_repeat',
+                'compare',
+                'compareAttribute' => 'password',
+                'message' => 'As passwords não coincidem.',
+            ],
         ];
     }
 
@@ -53,6 +63,7 @@ class ResetPasswordForm extends Model
     {
         return [
             'password' => 'Nova password',
+            'password_repeat' => 'Confirmar nova password',
         ];
     }
 

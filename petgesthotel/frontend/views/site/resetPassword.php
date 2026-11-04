@@ -22,6 +22,10 @@ $this->params['authImage'] = 'furao.jpeg';
         ->passwordInput(['autofocus' => true, 'placeholder' => 'Nova password', 'autocomplete' => 'new-password'])
         ->label('Nova password:') ?>
 
+    <?= $form->field($model, 'password_repeat')
+        ->passwordInput(['placeholder' => 'Confirmar nova password', 'autocomplete' => 'new-password'])
+        ->label('Confirmar nova password:') ?>
+
     <?= Html::submitButton('Guardar', ['class' => 'pg-auth__btn']) ?>
 
 <?php ActiveForm::end(); ?>

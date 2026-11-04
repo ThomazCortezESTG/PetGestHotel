@@ -59,6 +59,9 @@
     border-color: var(--pg-teal);
     box-shadow: 0 0 0 .25rem rgba(28, 138, 140, .25);
 }
+.pg-auth .form-control.is-invalid {
+    border-color: #dc3545;
+}
 h1, h2, .h1, .h2 {
     font-family: var(--pg-font-display);
     letter-spacing: -0.02em;
