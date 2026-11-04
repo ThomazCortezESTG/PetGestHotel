@@ -36,12 +36,35 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                     <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/site/login']) ?>">Entrar</a>
                     <a class="pg-btn pg-btn--primary" href="<?= Url::to(['/site/signup']) ?>">Criar conta</a>
                 <?php else: ?>
-                    <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/reserva/index']) ?>">As minhas reservas</a>
-                    <?= Html::beginForm(['/site/logout'], 'post', ['class' => 'pg-nav__logout']) ?>
-                        <?= Html::submitButton('Sair', ['class' => 'pg-btn pg-btn--primary']) ?>
-                    <?= Html::endForm() ?>
+                    <div class="dropdown">
+                        <img src="https://via.placeholder.com/80" alt="Menu" class="dropbtn" onclick="myFunction()">
+                        <div id="myDropdown" class="dropdown-content">
+                            <a href="#home">As minhas reservas</a>
+                            <a href="#about">Os meus animais</a>
+                            <?= Html::a('Sair', ['/site/logout'], ['data-method' => 'post',]) ?>
+                        </div>
+                    </div>
                 <?php endif; ?>
             </div>
         </nav>
     </div>
 </header>
+
+<script>
+    function myFunction() {
+        document.getElementById("myDropdown").classList.toggle("show");
+    }
+
+    // Fecha o dropdown se clicar fora
+    window.onclick = function(event) {
+        if (!event.target.matches('.dropbtn')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
+        }
+    }
+</script>
