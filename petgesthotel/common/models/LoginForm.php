@@ -14,7 +14,7 @@ class LoginForm extends Model
 {
     public string $username = '';
     public string $password = '';
-    public bool $rememberMe = true;
+    public bool $rememberMe = false;
     private User|null $_user = null;
     /**
      * {@inheritdoc}
@@ -22,12 +22,25 @@ class LoginForm extends Model
     public function rules(): array
     {
         return [
+            ['username', 'trim'],
             // username and password are both required
             [['username', 'password'], 'required'],
             // rememberMe must be a boolean value
             ['rememberMe', 'boolean'],
             // password is validated by validatePassword()
             ['password', 'validatePassword'],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function attributeLabels(): array
+    {
+        return [
+            'username' => 'E-mail ou nome de utilizador',
+            'password' => 'Password',
+            'rememberMe' => 'Lembrar-me',
         ];
     }
 
@@ -44,7 +57,7 @@ class LoginForm extends Model
             $user = $this->getUser();
 
             if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
+                $this->addError($attribute, 'E-mail, nome de utilizador ou password incorretos.');
             }
         }
     }
@@ -64,14 +77,14 @@ class LoginForm extends Model
     }
 
     /**
-     * Finds user by [[username]]
+     * Finds user by [[username]], which can be the username or the email
      *
      * @return User|null
      */
     protected function getUser(): User|null
     {
         if ($this->_user === null) {
-            $this->_user = User::findByUsername($this->username);
+            $this->_user = User::findByUsernameOrEmail($this->username);
         }
 
         return $this->_user;

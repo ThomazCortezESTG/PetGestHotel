@@ -35,20 +35,20 @@ final class LoginCest
     public function checkEmpty(FunctionalTester $I): void
     {
         $I->submitForm('#login-form', $this->formParams('', ''));
-        $I->seeValidationError('Username cannot be blank.');
-        $I->seeValidationError('Password cannot be blank.');
+        $I->seeValidationError('“E-mail ou nome de utilizador” não pode ficar em branco.');
+        $I->seeValidationError('“Password” não pode ficar em branco.');
     }
 
     public function checkWrongPassword(FunctionalTester $I): void
     {
         $I->submitForm('#login-form', $this->formParams('admin', 'wrong'));
-        $I->seeValidationError('Incorrect username or password.');
+        $I->seeValidationError('E-mail, nome de utilizador ou password incorretos.');
     }
 
     public function checkInactiveAccount(FunctionalTester $I): void
     {
         $I->submitForm('#login-form', $this->formParams('test.test', 'Test1234'));
-        $I->seeValidationError('Incorrect username or password');
+        $I->seeValidationError('E-mail, nome de utilizador ou password incorretos.');
     }
 
     public function checkValidLogin(FunctionalTester $I): void
