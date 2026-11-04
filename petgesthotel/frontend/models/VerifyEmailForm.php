@@ -7,6 +7,7 @@ namespace frontend\models;
 use common\models\User;
 use yii\base\InvalidArgumentException;
 use yii\base\Model;
+use yii\mail\MailerInterface;
 
 class VerifyEmailForm extends Model
 {
@@ -45,5 +46,27 @@ class VerifyEmailForm extends Model
         $user->status = User::STATUS_ACTIVE;
 
         return $user->save(false) ? $user : null;
+    }
+
+    /**
+     * Sends the welcome email, once the account is active.
+     *
+     * @param MailerInterface $mailer the mailer component.
+     * @param string $supportEmail the support email address.
+     * @param string $appName the application name.
+     *
+     * @return bool whether the email was sent.
+     */
+    public function sendWelcomeEmail(MailerInterface $mailer, string $supportEmail, string $appName): bool
+    {
+        return $mailer
+            ->compose(
+                ['html' => 'welcome-html', 'text' => 'welcome-text'],
+                ['user' => $this->_user],
+            )
+            ->setFrom([$supportEmail => $appName])
+            ->setTo($this->_user->email)
+            ->setSubject('Bem-vindo ao ' . $appName)
+            ->send();
     }
 }

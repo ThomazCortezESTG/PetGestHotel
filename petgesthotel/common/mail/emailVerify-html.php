@@ -10,9 +10,13 @@ use yii\helpers\Html;
 $verifyLink = Yii::$app->urlManager->createAbsoluteUrl(['site/verify-email', 'token' => $user->verification_token]);
 ?>
 <div class="verify-email">
-    <p>Hello <?= Html::encode($user->username) ?>,</p>
+    <p>Olá <?= Html::encode($user->username) ?>,</p>
 
-    <p>Follow the link below to verify your email:</p>
+    <p>Obrigado por se registar no <?= Html::encode(Yii::$app->name) ?>! Para ativar a sua conta, confirme o seu e-mail:</p>
 
-    <p><?= Html::a(Html::encode($verifyLink), $verifyLink) ?></p>
+    <?= $this->render('_button', ['label' => 'Confirmar e-mail', 'url' => $verifyLink]) ?>
+
+    <p style="font-size: 13px; color: #33506A;">Se o botão não funcionar, copie este link para o browser:<br /><?= Html::a(Html::encode($verifyLink), $verifyLink) ?></p>
+
+    <p style="font-size: 13px; color: #33506A;">Se não foi você a criar esta conta, pode ignorar este e-mail.</p>
 </div>
