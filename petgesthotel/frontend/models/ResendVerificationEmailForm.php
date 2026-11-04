@@ -20,11 +20,16 @@ class ResendVerificationEmailForm extends Model
             ['email', 'trim'],
             ['email', 'required'],
             ['email', 'email'],
-            ['email', 'exist',
-                'targetClass' => User::class,
-                'filter' => ['status' => User::STATUS_INACTIVE],
-                'message' => 'There is no user with this email address.',
-            ],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function attributeLabels(): array
+    {
+        return [
+            'email' => 'E-mail',
         ];
     }
 
@@ -53,9 +58,9 @@ class ResendVerificationEmailForm extends Model
                 ['html' => 'emailVerify-html', 'text' => 'emailVerify-text'],
                 ['user' => $user],
             )
-            ->setFrom([$supportEmail => $appName . ' robot'])
+            ->setFrom([$supportEmail => $appName])
             ->setTo($this->email)
-            ->setSubject('Account registration at ' . $appName)
+            ->setSubject('Confirme o seu e-mail - ' . $appName)
             ->send();
     }
 }

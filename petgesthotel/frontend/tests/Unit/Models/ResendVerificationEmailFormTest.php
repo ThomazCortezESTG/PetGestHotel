@@ -33,11 +33,10 @@ final class ResendVerificationEmailFormTest extends Unit
         $model->attributes = ['email' => 'aaa@bbb.cc'];
 
         verify($model->validate())
-            ->false();
-        verify($model->hasErrors())
             ->true();
-        verify($model->getFirstError('email'))
-            ->equals('There is no user with this email address.');
+        verify($model->sendEmail(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))
+            ->false();
+        $this->tester->dontSeeEmailIsSent();
     }
 
     public function testEmptyEmailAddress(): void
@@ -51,7 +50,7 @@ final class ResendVerificationEmailFormTest extends Unit
         verify($model->hasErrors())
             ->true();
         verify($model->getFirstError('email'))
-            ->equals('Email cannot be blank.');
+            ->equals('“E-mail” não pode ficar em branco.');
     }
 
     public function testResendToActiveUser(): void
@@ -61,11 +60,10 @@ final class ResendVerificationEmailFormTest extends Unit
         $model->attributes = ['email' => 'test2@mail.com'];
 
         verify($model->validate())
-            ->false();
-        verify($model->hasErrors())
             ->true();
-        verify($model->getFirstError('email'))
-            ->equals('There is no user with this email address.');
+        verify($model->sendEmail(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))
+            ->false();
+        $this->tester->dontSeeEmailIsSent();
     }
 
     public function testSuccessfullyResend(): void
@@ -90,7 +88,7 @@ final class ResendVerificationEmailFormTest extends Unit
         verify($mail->getFrom())
             ->arrayHasKey(Yii::$app->params['supportEmail']);
         verify($mail->getSubject())
-            ->equals('Account registration at ' . Yii::$app->name);
+            ->equals('Confirme o seu e-mail - ' . Yii::$app->name);
         verify($mail->toString())
             ->stringContainsString('4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_1548675330');
     }

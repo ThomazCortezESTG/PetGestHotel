@@ -17,12 +17,11 @@ final class SignupCest
 
     public function signupWithEmptyFields(FunctionalTester $I): void
     {
-        $I->see('Create a new account', 'h1');
-        $I->see('Fill out the fields below to get started');
+        $I->see('Crie a sua conta', 'h1');
         $I->submitForm($this->formId, []);
-        $I->seeValidationError('Username cannot be blank.');
-        $I->seeValidationError('Email cannot be blank.');
-        $I->seeValidationError('Password cannot be blank.');
+        $I->seeValidationError('“Nome de utilizador” não pode ficar em branco.');
+        $I->seeValidationError('“E-mail” não pode ficar em branco.');
+        $I->seeValidationError('“Password” não pode ficar em branco.');
     }
 
     public function signupWithWrongEmail(FunctionalTester $I): void
@@ -33,11 +32,12 @@ final class SignupCest
                 'SignupForm[username]' => 'tester',
                 'SignupForm[email]' => 'ttttt',
                 'SignupForm[password]' => 'tester_password',
+                'SignupForm[password_repeat]' => 'tester_password',
             ]
         );
-        $I->dontSee('Username cannot be blank.', '.invalid-feedback');
-        $I->dontSee('Password cannot be blank.', '.invalid-feedback');
-        $I->see('Email is not a valid email address.', '.invalid-feedback');
+        $I->dontSee('“Nome de utilizador” não pode ficar em branco.', '.invalid-feedback');
+        $I->dontSee('“Password” não pode ficar em branco.', '.invalid-feedback');
+        $I->see('“E-mail” não é um endereço de e-mail válido.', '.invalid-feedback');
     }
 
     public function signupSuccessfully(FunctionalTester $I): void
@@ -48,6 +48,7 @@ final class SignupCest
                 'SignupForm[username]' => 'tester',
                 'SignupForm[email]' => 'tester.email@example.com',
                 'SignupForm[password]' => 'tester_password',
+                'SignupForm[password_repeat]' => 'tester_password',
             ],
         );
 
@@ -61,6 +62,6 @@ final class SignupCest
         );
 
         $I->seeEmailIsSent();
-        $I->see('Thank you for registration. Please check your inbox for verification email.');
+        $I->see('Obrigado por se registar! Verifique a sua caixa de correio para confirmar o e-mail.');
     }
 }
