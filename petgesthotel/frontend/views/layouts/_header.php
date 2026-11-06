@@ -44,7 +44,7 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                             if(Yii::$app->user->can("accessBackend")){
                                 ?><a href="#home">Dashboard</a><?php
                             }
-                            else{
+                            else if(Yii::$app->user->can("accessBackend")){
                                 ?>
                                 <a href="#home">As minhas reservas</a>
                                 <a href="#about">Os meus animais</a>
