@@ -35,10 +35,12 @@ class RbacController extends Controller
         // booking
         $createBooking = $auth->createPermission('createBooking');
         $auth->add($createBooking);
-        $editBooking = $auth->createPermission('editBooking');
-        $auth->add($editBooking);
-        $cancelBooking = $auth->createPermission('cancelBooking');
-        $auth->add($cancelBooking);
+        $editOwnBooking = $auth->createPermission('editOwnBooking');
+        $auth->add($editOwnBooking);
+        $cancelOwnBooking = $auth->createPermission('cancelOwnBooking');
+        $auth->add($cancelOwnBooking);
+        $viewOwnBooking = $auth->createPermission('viewOwnBooking');
+        $auth->add($viewOwnBooking);
         $viewBooking = $auth->createPermission('viewBooking');
         $auth->add($viewBooking);
         $approveBooking = $auth->createPermission('approveBooking');
@@ -113,11 +115,11 @@ class RbacController extends Controller
         $auth->addChild($cliente, $createAnimal);
         $auth->addChild($cliente, $editOwnAnimal);
         $auth->addChild($cliente, $deleteOwnAnimal);
-        $auth->addChild($cliente, $viewAnimal);
+        $auth->addChild($cliente, $viewOwnAnimal);
         $auth->addChild($cliente, $createBooking);
-        $auth->addChild($cliente, $editBooking);
-        $auth->addChild($cliente, $cancelBooking);
-        $auth->addChild($cliente, $viewBooking);
+        $auth->addChild($cliente, $editOwnBooking);
+        $auth->addChild($cliente, $cancelOwnBooking);
+        $auth->addChild($cliente, $viewOwnBooking);
         $auth->addChild($cliente, $payBooking);
         $auth->addChild($cliente, $addExtraService);
         $auth->addChild($cliente, $viewInvoice);
