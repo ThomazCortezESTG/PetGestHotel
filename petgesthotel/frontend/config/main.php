@@ -15,6 +15,9 @@ return [
     'bootstrap' => ['log'],
     'controllerNamespace' => 'frontend\controllers',
     'components' => [
+        'authManager' => [
+            'class' => 'yii\rbac\DbManager',
+        ],
         'assetManager' => [
             // acrescenta ?v=<data do ficheiro> ao CSS/JS, para o browser não usar versões antigas
             'appendTimestamp' => true,
