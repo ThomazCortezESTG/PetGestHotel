@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+$params = require __DIR__ . '/params.php';
+
 return [
     'name' => 'PetGestHotel',
     'language' => 'pt-PT',
@@ -19,6 +21,18 @@ return [
         ],
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
+        ],
+        'urlManagerBackend' => [
+            'class' => 'yii\web\UrlManager',
+            'baseUrl' => $params['backendUrl'],
+            'enablePrettyUrl' => true,
+            'showScriptName' => false,
+        ],
+        'urlManagerFrontend' => [
+            'class' => 'yii\web\UrlManager',
+            'baseUrl' => $params['frontendUrl'],
+            'enablePrettyUrl' => true,
+            'showScriptName' => false,
         ],
     ],
 ];
