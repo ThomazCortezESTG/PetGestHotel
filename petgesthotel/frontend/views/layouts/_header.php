@@ -42,7 +42,7 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                             <span class="dropdown-user"><?= Html::encode(Yii::$app->user->identity->username) ?></span>
                             <?php
                             if(Yii::$app->user->can("accessBackend")){
-                                ?><a href="#home">Dashboard</a><?php
+                                ?> <?= Html::a('Ir para o Backend', Yii::$app->urlManagerBackend->createAbsoluteUrl(['site/index'])) ?><?php
                             }
                             else if(Yii::$app->user->can("viewOwnBooking") && Yii::$app->user->can("viewOwnAnimal")){
                                 ?>
