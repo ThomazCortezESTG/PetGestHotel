@@ -19,12 +19,16 @@ $this->params['authImage'] = 'furao.jpeg';
 <?php $form = ActiveForm::begin(['id' => 'reset-password-form']); ?>
 
     <?= $form->field($model, 'password')
-        ->passwordInput(['autofocus' => true, 'placeholder' => 'Nova password', 'autocomplete' => 'new-password'])
-        ->label('Nova password:') ?>
+        ->passwordInput([
+            'autofocus' => true,
+            'placeholder' => 'Mínimo de ' . Yii::$app->params['user.passwordMinLength'] . ' caracteres',
+            'autocomplete' => 'new-password',
+        ])
+        ->label('Nova password') ?>
 
     <?= $form->field($model, 'password_repeat')
-        ->passwordInput(['placeholder' => 'Confirmar nova password', 'autocomplete' => 'new-password'])
-        ->label('Confirmar nova password:') ?>
+        ->passwordInput(['autocomplete' => 'new-password'])
+        ->label('Confirmar nova password') ?>
 
     <?= Html::submitButton('Guardar', ['class' => 'pg-auth__btn']) ?>
 
