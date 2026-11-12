@@ -34,5 +34,14 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
         ],
+        'user' => [
+            'identityClass' => 'common\models\User',
+            'enableAutoLogin' => false,
+            'identityCookie' => ['name' => '_identity', 'httpOnly' => true, 'path' => '/'],
+        ],
+        'session' => [
+            'name' => 'app-session',
+            'cookieParams' => ['path' => '/'],
+        ],
     ],
 ];

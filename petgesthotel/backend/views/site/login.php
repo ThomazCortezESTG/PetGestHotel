@@ -102,7 +102,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
 
                 <?php ActiveForm::end(); ?>
 
-                <?= Html::a('Ir para o Backend', Yii::$app->urlManagerFrontend->createAbsoluteUrl(['site/index']), ['class' => 'btn btn-primary']) ?>
+                <?= Html::a('Ir para o Frontend', Yii::$app->urlManagerFrontend->createAbsoluteUrl(['site/index']), ['class' => 'btn login-btn btn-lg rounded-3 text-white']) ?>
 
             </div>
         </div>

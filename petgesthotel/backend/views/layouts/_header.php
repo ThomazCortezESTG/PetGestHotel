@@ -19,6 +19,10 @@ $items = [
         'visible' => Yii::$app->user->isGuest,
     ],
     [
+         'label' => 'Ir para o Frontend',
+         'url' => Yii::$app->urlManagerFrontend->createAbsoluteUrl(['site/index']),
+    ],
+    [
         'label' => 'Logout (' . Html::encode(Yii::$app->user->identity?->username) . ')',
         'url' => ['/site/logout'],
         'linkOptions' => [

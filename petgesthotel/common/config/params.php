@@ -9,6 +9,6 @@ return [
     'senderName' => 'Example.com mailer',
     'user.passwordResetTokenExpire' => 3600,
     'user.passwordMinLength' => 8,
-    'backendUrl' => '/Projeto/PetGestHotel/petgesthotel/backend/web',
-    'frontendUrl' => '/Projeto/PetGestHotel/petgesthotel/frontend/web',
+    'backendUrl' => Yii::getAlias('@backendUrl', false) ?: '/backend/web',
+    'frontendUrl' => Yii::getAlias('@frontendUrl', false) ?: '/frontend/web'
 ];
