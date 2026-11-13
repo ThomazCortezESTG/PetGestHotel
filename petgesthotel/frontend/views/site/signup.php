@@ -19,23 +19,23 @@ $this->params['authVariant'] = 'compact';
 <?php $form = ActiveForm::begin(['id' => 'form-signup']); ?>
 
     <?= $form->field($model, 'username')
-        ->textInput(['autofocus' => true, 'placeholder' => 'Nome de utilizador', 'autocomplete' => 'username'])
-        ->label('Nome de utilizador:') ?>
+        ->textInput(['autofocus' => true, 'autocomplete' => 'username'])
+        ->label('Nome de utilizador') ?>
 
     <?= $form->field($model, 'email')
-        ->textInput(['type' => 'email', 'placeholder' => 'E-mail', 'autocomplete' => 'email'])
-        ->label('E-mail:') ?>
+        ->textInput(['type' => 'email', 'placeholder' => 'nome@exemplo.pt', 'autocomplete' => 'email'])
+        ->label('E-mail') ?>
 
     <?= $form->field($model, 'password')
         ->passwordInput([
             'placeholder' => 'Mínimo de ' . Yii::$app->params['user.passwordMinLength'] . ' caracteres',
             'autocomplete' => 'new-password',
         ])
-        ->label('Password:') ?>
+        ->label('Password') ?>
 
     <?= $form->field($model, 'password_repeat')
-        ->passwordInput(['placeholder' => 'Repita a password', 'autocomplete' => 'new-password'])
-        ->label('Repita a password:') ?>
+        ->passwordInput(['autocomplete' => 'new-password'])
+        ->label('Repita a password') ?>
 
     <?= Html::submitButton('Criar Conta', ['class' => 'pg-auth__btn', 'name' => 'signup-button']) ?>
 

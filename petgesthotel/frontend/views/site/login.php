@@ -18,12 +18,12 @@ $this->params['authImage'] = 'borzoiDog.webp';
 <?php $form = ActiveForm::begin(['id' => 'login-form']); ?>
 
     <?= $form->field($model, 'username')
-        ->textInput(['autofocus' => true, 'placeholder' => 'E-mail ou nome de utilizador', 'autocomplete' => 'username'])
-        ->label('E-mail ou nome de utilizador:') ?>
+        ->textInput(['autofocus' => true, 'autocomplete' => 'username'])
+        ->label('E-mail ou nome de utilizador') ?>
 
     <?= $form->field($model, 'password')
-        ->passwordInput(['placeholder' => 'Password', 'autocomplete' => 'current-password'])
-        ->label('Password:') ?>
+        ->passwordInput(['autocomplete' => 'current-password'])
+        ->label('Password') ?>
 
     <div class="pg-auth__options">
         <?= $form->field($model, 'rememberMe')->checkbox() ?>
@@ -43,4 +43,4 @@ $this->params['authImage'] = 'borzoiDog.webp';
 
 <p class="pg-auth__or">ou</p>
 
-<?= Html::a('Criar Conta', ['site/signup'], ['class' => 'pg-auth__btn pg-auth__btn--dark']) ?>
+<?= Html::a('Criar Conta', ['site/signup'], ['class' => 'pg-auth__btn pg-auth__btn--outline']) ?>
