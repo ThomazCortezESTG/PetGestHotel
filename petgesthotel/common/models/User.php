@@ -30,6 +30,8 @@ class User extends ActiveRecord implements IdentityInterface
     public const STATUS_DELETED = 0;
     public const STATUS_INACTIVE = 9;
     public const STATUS_ACTIVE = 10;
+
+    public $password;
     /**
      * {@inheritdoc}
      */
@@ -51,11 +53,23 @@ class User extends ActiveRecord implements IdentityInterface
     /**
      * {@inheritdoc}
      */
+    /**
+     * {@inheritdoc}
+     */
     public function rules(): array
     {
         return [
             ['status', 'default', 'value' => self::STATUS_INACTIVE],
             ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_DELETED]],
+
+            [['username', 'email'], 'required'],
+            [['username', 'email'], 'string', 'max' => 255],
+            [['username'], 'unique'],
+            [['email'], 'unique'],
+            [['email'], 'email'],
+
+            [['password'], 'required', 'on' => 'create'],
+            [['password'], 'string', 'min' => 6],
         ];
     }
 
@@ -228,5 +242,10 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken(): void
     {
         $this->password_reset_token = null;
+    }
+
+    public function getUserProfile()
+    {
+        return $this->hasOne(\common\models\UserProfile::class, ['user_id' => 'id']);
     }
 }
