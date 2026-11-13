@@ -17,15 +17,6 @@ return [
         'request' => [
             'csrfParam' => '_csrf-backend',
         ],
-        'user' => [
-            'identityClass' => \common\models\User::class,
-            'enableAutoLogin' => true,
-            'identityCookie' => ['name' => '_identity-backend', 'httpOnly' => true],
-        ],
-        'session' => [
-            // this is the name of the session cookie used for login on the backend
-            'name' => 'advanced-backend',
-        ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
@@ -46,4 +37,24 @@ return [
         ],
     ],
     'params' => $params,
+    'as access' => [
+        'class' => 'yii\filters\AccessControl',
+        'rules' => [
+            [
+                'actions' => ['login', 'error'],
+                'allow' => true,
+            ],
+            [
+                'allow' => true,
+                'roles' => ['accessBackend'],
+            ],
+        ],
+        'denyCallback' => function ($rule, $action) {
+            if (Yii::$app->user->isGuest) {
+                return Yii::$app->user->loginRequired();
+            }
+
+            return Yii::$app->response->redirect(Yii::$app->params['frontendUrl']);
+        },
+    ],
 ];

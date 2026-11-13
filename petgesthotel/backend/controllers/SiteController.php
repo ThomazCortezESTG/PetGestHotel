@@ -33,7 +33,7 @@ class SiteController extends Controller
                     [
                         'actions' => ['logout', 'index'],
                         'allow' => true,
-                        'roles' => ['@'],
+                        'roles' => ['accessBackend'],
                     ],
                 ],
             ],
@@ -83,6 +83,10 @@ class SiteController extends Controller
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            if (!Yii::$app->user->can('accessBackend')) {
+                Yii::$app->user->logout();
+                return $this->redirect(Yii::$app->params['frontendUrl']);
+            }
             return $this->goBack();
         }
 

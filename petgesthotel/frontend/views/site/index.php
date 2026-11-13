@@ -224,7 +224,8 @@ $servicos = [
     </div>
 </section>
 
-<!-- ============ CTA FINAL ============ -->
+<!-- ============ CTA FINAL (só para visitantes) ============ -->
+<?php if (Yii::$app->user->isGuest): ?>
 <section class="pg-cta" aria-labelledby="cta-title">
     <div class="pg-container pg-cta__inner" data-reveal="zoom">
         <div class="pg-cta__text">
@@ -237,3 +238,4 @@ $servicos = [
         </div>
     </div>
 </section>
+<?php endif; ?>

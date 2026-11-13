@@ -19,8 +19,8 @@ $this->params['authImage'] = 'furao.jpeg';
 <?php $form = ActiveForm::begin(['id' => 'request-password-reset-form']); ?>
 
     <?= $form->field($model, 'email')
-        ->textInput(['type' => 'email', 'autofocus' => true, 'placeholder' => 'E-mail', 'autocomplete' => 'email'])
-        ->label('E-mail:') ?>
+        ->textInput(['type' => 'email', 'autofocus' => true, 'placeholder' => 'nome@exemplo.pt', 'autocomplete' => 'email'])
+        ->label('E-mail') ?>
 
     <?= Html::submitButton('Enviar e-mail', ['class' => 'pg-auth__btn']) ?>
 

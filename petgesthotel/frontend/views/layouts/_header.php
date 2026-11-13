@@ -39,8 +39,19 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                     <div class="dropdown">
                         <img src="https://via.placeholder.com/80" alt="Menu" class="dropbtn" onclick="myFunction()">
                         <div id="myDropdown" class="dropdown-content">
-                            <a href="#home">As minhas reservas</a>
-                            <a href="#about">Os meus animais</a>
+                            <span class="dropdown-user"><?= Html::encode(Yii::$app->user->identity->username) ?></span>
+                            <?php
+                            if(Yii::$app->user->can("accessBackend")){
+                                ?> <?= Html::a('Ir para o Backend', Yii::$app->urlManagerBackend->createAbsoluteUrl(['site/index'])) ?><?php
+                            }
+                            else if(Yii::$app->user->can("viewOwnBooking") && Yii::$app->user->can("viewOwnAnimal")){
+                                ?>
+                                <a href="#home">As minhas reservas</a>
+                                <a href="#about">Os meus animais</a>
+                                <?php
+                            }
+                            ?>
+
                             <?= Html::a('Sair', ['/site/logout'], ['data-method' => 'post',]) ?>
                         </div>
                     </div>
