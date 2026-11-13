@@ -1,35 +1,40 @@
 <?php
 
-declare(strict_types=1);
-
-/** @var yii\web\View $this */
-/** @var string $name */
-/** @var string $message */
-/** @var Exception $exception */
+/* @var $this yii\web\View */
+/* @var $name string */
+/* @var $message string */
+/* @var $exception Exception */
 
 use yii\helpers\Html;
-use yii\web\HttpException;
 
 $this->title = $name;
-$statusCode = $exception instanceof HttpException ? $exception->statusCode : 500;
+$this->params['breadcrumbs'] = [['label' => $this->title]];
 ?>
-<div class="site-error d-flex align-items-center justify-content-center text-center">
-    <div class="site-error-content mx-auto">
-        <h1 class="display-1 fw-bold text-body-secondary mb-0"><?= Html::encode((string) $statusCode) ?></h1>
+<div class="error-page">
+    <div class="error-content" style="margin-left: auto;">
+        <h3><i class="fas fa-exclamation-triangle text-danger"></i> <?= Html::encode($name) ?></h3>
 
-        <h2 class="display-6 fw-semibold mb-3"><?= Html::encode($message) ?></h2>
-
-        <p class="text-body-secondary mb-4">
-            The above error occurred while the Web server was processing your request.
-            Please contact us if you think this is a server error. Thank you.
+        <p>
+            <?= nl2br(Html::encode($message)) ?>
         </p>
 
-        <?= Html::a(
-            'Go to Homepage',
-            Yii::$app->homeUrl,
-            [
-                'class' => 'btn btn-outline-primary btn-lg',
-            ],
-        ) ?>
+        <p>
+            The above error occurred while the Web server was processing your request.
+            Please contact us if you think this is a server error. Thank you.
+            Meanwhile, you may <?= Html::a('return to dashboard', Yii::$app->homeUrl); ?>
+            or try using the search form.
+        </p>
+
+        <form class="search-form" style="margin-right: 190px;">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search">
+
+                <div class="input-group-append">
+                    <button type="submit" name="submit" class="btn btn-danger"><i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
+
