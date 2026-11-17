@@ -5,7 +5,6 @@ declare(strict_types=1);
 /** @var yii\web\View $this */
 /** @var string $content */
 
-use common\widgets\Alert;
 use yii\bootstrap5\Breadcrumbs;
 use yii\helpers\Html;
 
@@ -28,12 +27,12 @@ $this->render('_head');
         <?php if (!empty($this->params['breadcrumbs'])): ?>
             <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
         <?php endif ?>
-        <?= Alert::widget() ?>
         <?= $content ?>
     </div>
 </main>
 
 <?= $this->render('_footer') ?>
+<?= $this->render('_toasts') ?>
 
 <?php $this->endBody() ?>
 </body>

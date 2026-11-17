@@ -37,12 +37,15 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
         ],
+        // 'class' explícito: sem ele a consola (php yii) falha, porque lá não existem 'user' nem 'session' por omissão
         'user' => [
+            'class' => \yii\web\User::class,
             'identityClass' => 'common\models\User',
             'enableAutoLogin' => false,
             'identityCookie' => ['name' => '_identity', 'httpOnly' => true, 'path' => '/'],
         ],
         'session' => [
+            'class' => \yii\web\Session::class,
             'name' => 'app-session',
             'cookieParams' => ['path' => '/'],
         ],
