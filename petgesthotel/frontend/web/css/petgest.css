@@ -325,17 +325,18 @@ body {
 }
 .pg-perks__list {
     list-style: none;
-    margin: 0;
+    margin-block: 0;
     padding-block: 28px;
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: center;
     gap: 20px 48px;
 }
 .pg-perks__list li {
     flex: 1 1 260px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 14px;
     font-size: 17px;
     font-weight: 600;
