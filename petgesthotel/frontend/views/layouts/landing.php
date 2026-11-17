@@ -10,7 +10,6 @@ declare(strict_types=1);
  * @var string $content
  */
 
-use common\widgets\Alert;
 use yii\helpers\Html;
 
 $this->render('_head');
@@ -34,11 +33,11 @@ $this->render('_head');
 <?= $this->render('_header') ?>
 
 <main id="main" role="main">
-    <div class="pg-container pg-alerts"><?= Alert::widget() ?></div>
     <?= $content ?>
 </main>
 
 <?= $this->render('_footer') ?>
+<?= $this->render('_toasts') ?>
 
 <?php $this->endBody() ?>
 </body>

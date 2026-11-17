@@ -1001,17 +1001,23 @@ body {
     .pg-auth__btn, .pg-auth .form-control { transition: none; }
 }
 .dropbtn {
-    width: 70%;
-    height: 70%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 2px solid var(--pg-teal);
     border-radius: 50%;
-    object-fit: cover;
+    background: var(--pg-navy);
+    color: var(--pg-white);
+    font: 700 16px/1 var(--pg-font-display);
     cursor: pointer;
-    border: 3px solid #3498DB;
+    transition: border-color .15s ease, transform .15s ease;
 }
 
 .dropbtn:hover {
-    border-color: #2980B9;
-    opacity: 0.9;
+    border-color: var(--pg-orange);
+    transform: scale(1.04);
 }
 
 .dropdown {
@@ -1055,3 +1061,126 @@ body {
 .show {
     display: block;
 }
+
+/* ---------- Toasts (mensagens flash por cima da página) ---------- */
+.pg-toasts {
+    position: fixed;
+    top: 96px;                      /* logo abaixo do header */
+    right: var(--pg-gutter);
+    z-index: 1080;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    width: min(420px, calc(100vw - 2 * var(--pg-gutter)));
+    pointer-events: none;           /* não bloqueia cliques na página, só nos próprios toasts */
+}
+.pg-toasts:empty { display: none; }
+.pg-toast {
+    --toast-accent: var(--pg-teal);
+    --toast-soft: var(--pg-teal-soft);
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 12px 16px 16px;
+    border-radius: 14px;
+    background: var(--pg-white);
+    color: var(--pg-navy);
+    box-shadow: 0 1px 0 rgba(15, 47, 71, .04), 0 18px 44px rgba(15, 47, 71, .22);
+    overflow: hidden;
+    pointer-events: auto;
+    transform-origin: 100% 0;
+    animation: pg-toast-in .55s cubic-bezier(.2, 1.25, .35, 1) both;
+}
+.pg-toast::before {               /* faixa de cor do tipo de mensagem */
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--toast-accent);
+}
+.pg-toast--success { --toast-accent: #1F9D6B; --toast-soft: #E3F5EC; }
+.pg-toast--info    { --toast-accent: var(--pg-teal); --toast-soft: var(--pg-teal-soft); }
+.pg-toast--warning { --toast-accent: #D9822B; --toast-soft: #FDF0E2; }
+.pg-toast--error   { --toast-accent: #C8352F; --toast-soft: #FBE7E6; }
+.pg-toast__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--toast-soft);
+    color: var(--toast-accent);
+}
+.pg-toast__icon svg { animation: pg-toast-icon .5s cubic-bezier(.2, 1.4, .4, 1) .2s both; }
+.pg-toast__msg {
+    align-self: center;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.pg-toast__msg a { color: var(--pg-teal-text); }
+.pg-toast__close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: -2px 0;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--pg-ink-2);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.pg-toast__close:hover { background: var(--pg-teal-soft); color: var(--pg-navy); }
+.pg-toast__timer {                /* barra que encolhe até o toast fechar */
+    position: absolute;
+    left: 4px;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--toast-accent);
+    opacity: .35;
+    transform-origin: left;
+    animation: pg-toast-timer var(--toast-time, 5s) linear .55s forwards;
+}
+.pg-toast:is(:hover, :focus-within) .pg-toast__timer { animation-play-state: paused; }
+/* Saída em dois tempos: desliza e desvanece, depois o espaço encolhe */
+.pg-toast.is-leaving { animation: pg-toast-out .45s cubic-bezier(.5, 0, .75, 0) forwards; pointer-events: none; }
+.pg-toast.is-collapsing {
+    min-height: 0;
+    padding-block: 0;
+    margin-bottom: -12px;           /* anula o gap do contentor */
+    transition: height .25s cubic-bezier(.4, 0, .2, 1), padding .25s cubic-bezier(.4, 0, .2, 1), margin .25s cubic-bezier(.4, 0, .2, 1);
+    height: 0 !important;
+}
+
+@keyframes pg-toast-in {
+    from { opacity: 0; transform: translateX(calc(100% + 24px)) scale(.96); }
+}
+@keyframes pg-toast-out {
+    to { opacity: 0; transform: translateX(calc(100% + 24px)) scale(.96); }
+}
+@keyframes pg-toast-icon { from { transform: scale(0) rotate(-45deg); } }
+@keyframes pg-toast-timer { to { transform: scaleX(0); } }
+
+@media (max-width: 599px) {
+    .pg-toasts { top: 84px; left: 50%; right: auto; transform: translateX(-50%); width: calc(100vw - 24px); }
+    .pg-toast { transform-origin: 50% 0; }
+    @keyframes pg-toast-in { from { opacity: 0; transform: translateY(-24px) scale(.96); } }
+    @keyframes pg-toast-out { to { opacity: 0; transform: translateY(-24px) scale(.96); } }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pg-toast, .pg-toast.is-leaving, .pg-toast__icon svg { animation-duration: .01ms; }
+    .pg-toast__timer { animation-delay: 0s; }
+}
+
+/* foto de perfil no botão da conta (a imagem não pode "roubar" o clique ao botão) */
+.dropbtn { overflow: hidden; }
+.dropbtn img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }

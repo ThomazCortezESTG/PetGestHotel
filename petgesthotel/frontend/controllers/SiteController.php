@@ -110,6 +110,12 @@ class SiteController extends Controller
         $model = new LoginForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            // Cliente sem perfil completo vai primeiro preenchê-lo (requisito: redirecionar para a criação do perfil após o registo)
+            $profile = Yii::$app->user->identity->userProfile;
+            if (!Yii::$app->user->can('accessBackend') && ($profile === null || !$profile->isComplete())) {
+                Yii::$app->session->setFlash('info', 'Bem-vindo! Falta só completar o seu perfil.');
+                return $this->redirect(['/perfil/update']);
+            }
             return $this->goHome();
         }
 
