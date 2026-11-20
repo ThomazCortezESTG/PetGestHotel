@@ -119,9 +119,16 @@
       <path value="$PROJECT_DIR$/petgesthotel/vendor/almasaeed2010/adminlte" />
       <path value="$PROJECT_DIR$/petgesthotel/vendor/hail812/yii2-adminlte3" />
       <path value="$PROJECT_DIR$/petgesthotel/vendor/yiisoft/yii2-bootstrap4" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/kartik-v/yii2-krajee-base" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/sebastian/file-filter" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/kartik-v/yii2-widget-datepicker" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/sebastian/git-state" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.5">
+    <option name="suggestChangeDefaultLanguageLevel" value="false" />
+  </component>
   <component name="PhpStan">
     <PhpStan_settings>
       <PhpStanConfiguration tool_path="$PROJECT_DIR$/petgesthotel/vendor/bin/phpstan" />
