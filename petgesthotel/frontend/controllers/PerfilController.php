@@ -10,6 +10,7 @@ use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
+use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\web\UploadedFile;
 
@@ -27,6 +28,7 @@ class PerfilController extends Controller
             'access' => [
                 'class' => AccessControl::class,
                 'rules' => [
+                    ['allow' => true, 'actions' => ['foto'], 'roles' => ['?', '@']],
                     ['allow' => true, 'roles' => ['@']],
                 ],
             ],
@@ -45,34 +47,63 @@ class PerfilController extends Controller
     private const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
     /**
-     * Recebe a fotografia já recortada no browser (perfil.js) e guarda-a.
+     * Recebe a fotografia já recortada no browser (avatar.js) e guarda-a.
      * A imagem é sempre redesenhada com o GD: apaga metadados (ex.: GPS) e nunca se guarda o ficheiro original.
+     * Responde sempre em JSON, mesmo quando algo falha no servidor (o motivo fica no log: runtime/logs/app.log).
      */
     public function actionAvatar(): Response
     {
-        $file = UploadedFile::getInstanceByName('avatar');
-        $fail = fn(string $msg, int $code = 422): Response => $this->asJson(['ok' => false, 'message' => $msg])
-            ->setStatusCode($code);
+        try {
+            return $this->saveAvatar();
+        } catch (\Throwable $e) {
+            Yii::error('Falha ao guardar fotografia de perfil: ' . $e, __METHOD__);
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, get_class($e) . ': ' . $e->getMessage());
+        }
+    }
 
+    /**
+     * Resposta de erro em JSON. O detalhe técnico só é mostrado em modo debug; fica sempre no log.
+     */
+    private function avatarFail(string $msg, int $code = 422, ?string $detail = null): Response
+    {
+        if ($detail !== null) {
+            Yii::warning('Fotografia de perfil: ' . $detail, __METHOD__);
+            if (YII_DEBUG) {
+                $msg .= ' (' . $detail . ')';
+            }
+        }
+        return $this->asJson(['ok' => false, 'message' => $msg])->setStatusCode($code);
+    }
+
+    private function saveAvatar(): Response
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'a extensão GD do PHP não está instalada');
+        }
+
+        $file = UploadedFile::getInstanceByName('avatar');
         if ($file === null || $file->hasError) {
-            return $fail('Não recebemos a fotografia. Tente outra vez.');
+            return $this->avatarFail('Não recebemos a fotografia. Tente outra vez.', 422, 'upload vazio ou com erro ' . ($file->error ?? 'sem ficheiro'));
         }
         if ($file->size > self::AVATAR_MAX_BYTES) {
-            return $fail('A fotografia é demasiado grande (máximo 2 MB).');
+            return $this->avatarFail('A fotografia é demasiado grande (máximo 2 MB).');
         }
 
-        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file->tempName);
-        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
-            return $fail('Use uma imagem JPG, PNG ou WebP.');
-        }
+        // tipo real do ficheiro (não confiar na extensão nem no tipo enviado pelo browser)
         $info = @getimagesize($file->tempName);
+        $mime = class_exists('finfo')
+            ? (new \finfo(FILEINFO_MIME_TYPE))->file($file->tempName)
+            : ($info['mime'] ?? '');
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            return $this->avatarFail('Use uma imagem JPG, PNG ou WebP.');
+        }
         if ($info === false || $info[0] < 64 || $info[1] < 64 || $info[0] > 4000 || $info[1] > 4000) {
-            return $fail('Esta imagem não é válida ou é demasiado pequena.');
+            return $this->avatarFail('Esta imagem não é válida ou é demasiado pequena.');
         }
 
         $src = @imagecreatefromstring((string) file_get_contents($file->tempName));
         if ($src === false) {
-            return $fail('Não foi possível ler esta imagem.');
+            return $this->avatarFail('Não foi possível ler esta imagem.', 422, 'o GD não conseguiu abrir um ' . $mime);
         }
 
         // recorte central quadrado (o browser já envia quadrado; isto só garante) e redimensiona
@@ -83,24 +114,35 @@ class PerfilController extends Controller
         imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
         imagecopyresampled($dst, $src, 0, 0, intdiv($w - $side, 2), intdiv($h - $side, 2), self::AVATAR_SIZE, self::AVATAR_SIZE, $side, $side);
 
-        $dir = Yii::getAlias('@webroot/' . UserProfile::AVATAR_DIR);
-        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
-            return $fail('Não foi possível guardar a fotografia.', 500);
+        $dir = UserProfile::avatarDir();
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'não foi possível criar a pasta ' . $dir . ' (avatar.path)');
         }
-        // nome aleatório: não revela o id do cliente e muda sempre (o browser não mostra a antiga da cache)
-        $name = bin2hex(random_bytes(12)) . '.webp';
-        if (!imagewebp($dst, $dir . DIRECTORY_SEPARATOR . $name, 86)) {
-            return $fail('Não foi possível guardar a fotografia.', 500);
+        if (!is_writable($dir)) {
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'sem permissão de escrita em ' . $dir . ' (avatar.path)');
+        }
+
+        // WebP se o GD do servidor o suportar; senão JPG. Nome aleatório: não revela o id e muda sempre (sem cache antiga).
+        $webp = function_exists('imagewebp');
+        $name = bin2hex(random_bytes(12)) . ($webp ? '.webp' : '.jpg');
+        $path = $dir . DIRECTORY_SEPARATOR . $name;
+        $written = $webp ? @imagewebp($dst, $path, 86) : @imagejpeg($dst, $path, 88);
+        if (!$written) {
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'falhou a escrita de ' . $name);
         }
 
         $user = $this->currentUser();
         $profile = $user->userProfile ?? new UserProfile(['user_id' => $user->id]);
+        if (!$profile->hasAttribute('avatar')) {
+            @unlink($path);
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'falta a coluna user_profile.avatar (correr php yii migrate)');
+        }
         $old = $profile->avatar;
         $profile->avatar = $name;
         $saved = $profile->isNewRecord ? $profile->save(false) : $profile->save(false, ['avatar']);
         if (!$saved) {
-            @unlink($dir . DIRECTORY_SEPARATOR . $name);
-            return $fail('Não foi possível guardar a fotografia.', 500);
+            @unlink($path);
+            return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'falhou a gravação na base de dados');
         }
         $this->deleteAvatarFile($old);
 
@@ -127,11 +169,34 @@ class PerfilController extends Controller
         ]);
     }
 
+    /**
+     * Entrega uma fotografia de perfil a partir da pasta configurada (avatar.path).
+     * Pública (aparece também no backend). Os nomes são aleatórios e só aceitamos os que nós geramos.
+     */
+    public function actionFoto(string $f): Response
+    {
+        $path = UserProfile::avatarFile($f);
+        if ($path === null || !is_file($path)) {
+            throw new NotFoundHttpException('Fotografia não encontrada.');
+        }
+
+        $response = Yii::$app->response;
+        // o nome muda a cada upload, por isso pode ficar em cache "para sempre"
+        $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+
+        return $response->sendFile($path, $f, [
+            'mimeType' => str_ends_with($f, '.webp') ? 'image/webp' : 'image/jpeg',
+            'inline' => true,
+        ]);
+    }
+
     private function deleteAvatarFile(?string $name): void
     {
         // só apaga nomes gerados por nós (evita apagar outro ficheiro se a BD tiver lixo)
-        if ($name && preg_match('/^[a-f0-9]{24}\.webp$/', $name)) {
-            @unlink(Yii::getAlias('@webroot/' . UserProfile::AVATAR_DIR) . DIRECTORY_SEPARATOR . $name);
+        $path = $name ? UserProfile::avatarFile($name) : null;
+        if ($path !== null) {
+            @unlink($path);
         }
     }
 

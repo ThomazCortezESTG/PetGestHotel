@@ -3,6 +3,7 @@
 namespace common\models;
 
 use Yii;
+use yii\helpers\Url;
 
 /**
  * This is the model class for table "user_profile".
@@ -19,21 +20,39 @@ use Yii;
  */
 class UserProfile extends \yii\db\ActiveRecord
 {
-    /** Pasta das fotografias de perfil, relativa ao webroot do frontend. */
-    public const AVATAR_DIR = 'uploads/avatars';
+    /** Formato dos nomes de ficheiro gerados pelo upload (impede caminhos como "../"). */
+    public const AVATAR_NAME_PATTERN = '/^[a-f0-9]{24}\.(webp|jpg)$/';
 
     /**
-     * URL público da fotografia, ou null se não tiver.
+     * Pasta onde ficam as fotografias (parâmetro "avatar.path"; ver common/config/params.php).
+     */
+    public static function avatarDir(): string
+    {
+        $path = Yii::$app->params['avatar.path'] ?? '@frontend/web/uploads/avatars';
+        return rtrim(Yii::getAlias($path), '/\\');
+    }
+
+    /**
+     * Caminho no disco de uma fotografia, ou null se o nome não for um dos nossos.
+     */
+    public static function avatarFile(string $name): ?string
+    {
+        return preg_match(self::AVATAR_NAME_PATTERN, $name) ? self::avatarDir() . DIRECTORY_SEPARATOR . $name : null;
+    }
+
+    /**
+     * URL da fotografia, ou null se não tiver. É servida pelo frontend (PerfilController::actionFoto),
+     * por isso a pasta pode estar em qualquer sítio do servidor, mesmo fora da pasta pública.
      */
     public function getAvatarUrl(): ?string
     {
         if (empty($this->avatar)) {
             return null;
         }
-        $base = Yii::$app->has('urlManagerFrontend') && Yii::$app->id !== 'app-frontend'
-            ? rtrim((string) Yii::$app->urlManagerFrontend->baseUrl, '/')
-            : Yii::getAlias('@web');
-        return $base . '/' . self::AVATAR_DIR . '/' . $this->avatar;
+        $route = ['/perfil/foto', 'f' => $this->avatar];
+        return Yii::$app->id === 'app-frontend' || !Yii::$app->has('urlManagerFrontend')
+            ? Url::to($route)
+            : Yii::$app->urlManagerFrontend->createUrl($route);
     }
 
     /**

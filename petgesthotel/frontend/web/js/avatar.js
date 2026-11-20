@@ -299,7 +299,18 @@
         }).then(function (res) {
             return res.json().catch(function () { return { ok: false }; }).then(function (data) {
                 if (!res.ok || !data.ok) {
-                    throw new Error(data.message || 'Não foi possível guardar. Tente outra vez.');
+                    if (data.message) {
+                        throw new Error(data.message);
+                    }
+                    // resposta que não é JSON: erro do servidor web/PHP antes de chegar ao controlador
+                    var why = {
+                        400: 'a sessão expirou, recarregue a página',
+                        403: 'sem permissão',
+                        404: 'endereço não encontrado',
+                        413: 'a imagem excede o limite do servidor',
+                        500: 'erro no servidor'
+                    }[res.status];
+                    throw new Error('Não foi possível guardar (erro ' + res.status + (why ? ': ' + why : '') + ').');
                 }
                 return data;
             });
