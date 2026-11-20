@@ -33,18 +33,24 @@ use yii\helpers\Url;
                     'items' => [
                             ['label' => 'Dashboard', 'icon' => 'tachometer-alt', 'url' => ['/site/index']],
 
-                            ['label' => 'GESTÃO', 'header' => true],
+                            ['label' => 'GESTÃO', 'header' => true ,'visible' => Yii::$app->user->can('admin') || Yii::$app->user->can('colaborador'),],
                             [
                                     'label' => 'Utilizadores',
                                     'icon' => 'users',
                                     'url' => ['/user/index'],
-                                    'visible' => Yii::$app->user->can('admin'),
+                                    'visible' => Yii::$app->user->can('admin') || Yii::$app->user->can('colaborador'),
+                            ],
+                            [
+                                    'label' => 'Animais',
+                                    'icon' => 'paw',
+                                    'url' => ['/animal/index'],
+                                    'visible' => Yii::$app->user->can('admin') || Yii::$app->user->can('colaborador'),
                             ],
                         // Podes adicionar aqui as próximas secções do PetGestHotel (Animais, Quartos, Reservas, etc.)
 
-                            ['label' => 'FERRAMENTAS DEV', 'header' => true, 'visible' => YII_ENV_DEV],
-                            ['label' => 'Gii',  'icon' => 'file-code', 'url' => ['/gii'], 'target' => '_blank', 'visible' => YII_ENV_DEV],
-                            ['label' => 'Debug', 'icon' => 'bug', 'url' => ['/debug'], 'target' => '_blank', 'visible' => YII_ENV_DEV],
+                            ['label' => 'FERRAMENTAS DEV', 'header' => true, 'visible' => Yii::$app->user->can('admin'),],
+                            ['label' => 'Gii',  'icon' => 'file-code', 'url' => ['/gii'], 'target' => '_blank', 'visible' => Yii::$app->user->can('admin'),],
+                            ['label' => 'Debug', 'icon' => 'bug', 'url' => ['/debug'], 'target' => '_blank', 'visible' => Yii::$app->user->can('admin'),],
                     ],
             ]);
             ?>

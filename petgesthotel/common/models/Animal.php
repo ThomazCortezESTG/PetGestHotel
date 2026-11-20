@@ -77,7 +77,7 @@ class Animal extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'nome' => 'Nome',
-            'data' => 'Data',
+            'data' => 'Data de Nascimento',
             'vacinas' => 'Vacinas',
             'observacoes' => 'Observações',
             'id_user' => 'Utilizador',
