@@ -139,7 +139,12 @@ class PerfilController extends Controller
         }
         $old = $profile->avatar;
         $profile->avatar = $name;
-        $saved = $profile->isNewRecord ? $profile->save(false) : $profile->save(false, ['avatar']);
+        try {
+            $saved = $profile->isNewRecord ? $profile->save(false) : $profile->save(false, ['avatar']);
+        } catch (\Throwable $e) {
+            @unlink($path); // não deixar ficheiros órfãos se a base de dados falhar
+            throw $e;
+        }
         if (!$saved) {
             @unlink($path);
             return $this->avatarFail('Não foi possível guardar a fotografia.', 500, 'falhou a gravação na base de dados');

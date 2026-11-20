@@ -20,6 +20,15 @@ use yii\helpers\Url;
  */
 class UserProfile extends \yii\db\ActiveRecord
 {
+    /**
+     * A chave é o user_id (um perfil por utilizador). Declarada aqui para funcionar mesmo
+     * em bases de dados onde a tabela foi criada à mão sem PRIMARY KEY.
+     */
+    public static function primaryKey(): array
+    {
+        return ['user_id'];
+    }
+
     /** Formato dos nomes de ficheiro gerados pelo upload (impede caminhos como "../"). */
     public const AVATAR_NAME_PATTERN = '/^[a-f0-9]{24}\.(webp|jpg)$/';
 
