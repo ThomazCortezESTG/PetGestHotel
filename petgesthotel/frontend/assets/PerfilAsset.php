@@ -17,6 +17,8 @@ class PerfilAsset extends AssetBundle
         'css/perfil.css',
     ];
     public $js = [
+        'js/pendulum.js',
+        'js/cropper.js',
         'js/perfil.js',
         'js/avatar.js',
     ];

@@ -41,12 +41,16 @@ class PetSearch extends Animal
      */
     public function search($params, $formName = null)
     {
-        $query = Animal::find();
-
-        // add conditions that should always apply here
+        // Cada cliente só vê os seus próprios animais
+        $query = Animal::find()
+            ->with(['racaPrincipal', 'racaSecundaria', 'documentos'])
+            ->where(['id_user' => \Yii::$app->user->id])
+            ->orderBy(['nome' => SORT_ASC]);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => ['pageSize' => 24],
+            'sort' => false,
         ]);
 
         $this->load($params, $formName);
@@ -61,7 +65,6 @@ class PetSearch extends Animal
         $query->andFilterWhere([
             'id' => $this->id,
             'data' => $this->data,
-            'id_user' => $this->id_user,
             'id_raca_principal' => $this->id_raca_principal,
             'id_raca_secundaria' => $this->id_raca_secundaria,
         ]);
