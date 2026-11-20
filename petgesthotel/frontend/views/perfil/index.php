@@ -19,6 +19,8 @@ PerfilAsset::register($this);
 $this->title = 'O meu perfil | PetGestHotel';
 $this->params['meta_description'] = 'Os seus dados de cliente no PetGestHotel.';
 
+$nAnimais = (int) \common\models\Animal::find()->where(['id_user' => $user->id])->count();
+
 $primeiroNome = explode(' ', trim((string) $profile->nome))[0];
 $telefone = $profile->telefone ? trim(chunk_split($profile->telefone, 3, ' ')) : null;
 $nascimento = $profile->data_nascimento ? Yii::$app->formatter->asDate($profile->data_nascimento, 'long') : null;
@@ -107,9 +109,15 @@ $grupos = [
                     <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="currentColor" opacity=".12"/><g fill="currentColor"><circle cx="34" cy="52" r="9"/><circle cx="50" cy="34" r="9"/><circle cx="70" cy="34" r="9"/><circle cx="86" cy="52" r="9"/><path d="M60 56c-12 0-24 14-24 25 0 7 5 9 10 9 6 0 9-3 14-3s8 3 14 3c5 0 10-2 10-9 0-11-12-25-24-25z"/></g></svg>
                 </div>
                 <div>
-                    <h2 id="g-animais">Ainda não tem animais registados</h2>
-                    <p>Para reservar uma estadia, registe primeiro o seu cão ou gato com a raça, as vacinas e os cuidados de que precisa.</p>
-                    <span class="pg-acct__soon">O registo de animais chega em breve</span>
+                    <?php if ($nAnimais > 0): ?>
+                        <h2 id="g-animais"><?= $nAnimais === 1 ? 'Tem 1 animal registado' : 'Tem ' . $nAnimais . ' animais registados' ?></h2>
+                        <p>Confirme que as vacinas e os cuidados estão em dia antes de reservar uma estadia.</p>
+                        <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/pet/index']) ?>">Ver os meus animais</a>
+                    <?php else: ?>
+                        <h2 id="g-animais">Ainda não tem animais registados</h2>
+                        <p>Para reservar uma estadia, registe primeiro o seu cão ou gato com a raça, as vacinas e os cuidados de que precisa.</p>
+                        <a class="pg-btn pg-btn--primary" href="<?= Url::to(['/pet/create']) ?>">Registar animal</a>
+                    <?php endif; ?>
                 </div>
             </section>
         </div>
