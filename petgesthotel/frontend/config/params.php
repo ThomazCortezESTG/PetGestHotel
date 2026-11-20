@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'adminEmail' => 'admin@example.com',
-
+    'bsVersion' => '5.x',
     // Contactos do hotel (rodapé e página "Sobre nós")
     'hotel' => [
         'email' => 'geral@petgesthotel.pt',
