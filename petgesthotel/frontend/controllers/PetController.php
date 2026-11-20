@@ -2,10 +2,16 @@
 
 namespace frontend\controllers;
 
+use common\components\PetStorage;
 use common\models\Animal;
+use common\models\AnimalDocumento;
+use frontend\models\PetFicheirosForm;
 use frontend\models\PetSearch;
+use Yii;
+use yii\web\Response;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 
 /**
@@ -13,6 +19,8 @@ use yii\filters\VerbFilter;
  */
 class PetController extends Controller
 {
+    public $layout = 'landing';
+
     /**
      * @inheritDoc
      */
@@ -21,6 +29,12 @@ class PetController extends Controller
         return array_merge(
             parent::behaviors(),
             [
+                'access' => [
+                    'class' => AccessControl::class,
+                    'rules' => [
+                        ['allow' => true, 'roles' => ['@']],
+                    ],
+                ],
                 'verbs' => [
                     'class' => VerbFilter::className(),
                     'actions' => [
@@ -29,6 +43,23 @@ class PetController extends Controller
                 ],
             ]
         );
+    }
+
+    /**
+     * Um envio maior do que post_max_size chega ao PHP sem dados (nem o token CSRF) e daria um erro 400.
+     * Aqui volta ao formulário com uma mensagem a explicar.
+     */
+    public function beforeAction($action)
+    {
+        $len = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($this->request->isPost && $_POST === [] && $_FILES === [] && $len > PetStorage::maxPostBytes()) {
+            Yii::$app->session->setFlash('pet-error', 'Os ficheiros juntos passam de ' . PetStorage::humanSize(PetStorage::maxPostBytes())
+                . '. Envie menos documentos de cada vez.');
+            $this->redirect($this->request->referrer ?: ['index'])->send();
+            return false;
+        }
+
+        return parent::beforeAction($action);
     }
 
     /**
@@ -68,17 +99,16 @@ class PetController extends Controller
     public function actionCreate()
     {
         $model = new Animal();
+        $model->loadDefaultValues();
+        $ficheiros = new PetFicheirosForm($model);
 
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'id' => $model->id]);
-            }
-        } else {
-            $model->loadDefaultValues();
+        if ($this->request->isPost && $this->guardar($model, $ficheiros)) {
+            return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('create', [
             'model' => $model,
+            'ficheiros' => $ficheiros,
         ]);
     }
 
@@ -92,14 +122,94 @@ class PetController extends Controller
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $ficheiros = new PetFicheirosForm($model);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+        if ($this->request->isPost && $this->guardar($model, $ficheiros)) {
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [
             'model' => $model,
+            'ficheiros' => $ficheiros,
         ]);
+    }
+
+    /**
+     * Grava os dados e os ficheiros do animal numa só transação.
+     * Se algum ficheiro falhar, nada fica gravado (nem os dados, nem os ficheiros já escritos).
+     */
+    private function guardar(Animal $model, PetFicheirosForm $ficheiros): bool
+    {
+        $model->load($this->request->post());
+        $ficheiros->loadFromRequest();
+        $okDados = $model->validate();
+        $okFicheiros = $ficheiros->validate();
+        if (!$okDados || !$okFicheiros) {
+            return false;
+        }
+
+        $tx = Yii::$app->db->beginTransaction();
+        try {
+            if (!$model->save(false)) {
+                throw new \RuntimeException('Não foi possível guardar os dados.');
+            }
+            $ficheiros->apply();
+            $tx->commit();
+        } catch (\RuntimeException $e) {
+            $tx->rollBack();
+            $ficheiros->afterRollback();
+            $ficheiros->addError('documentos', $e->getMessage());
+            return false;
+        } catch (\Throwable $e) {
+            $tx->rollBack();
+            $ficheiros->afterRollback();
+            throw $e;
+        }
+        $ficheiros->afterCommit();
+        return true;
+    }
+
+    /**
+     * Fotografia do animal. Só para o dono (findModel dá 404 a outros clientes).
+     */
+    public function actionFoto($id): Response
+    {
+        $model = $this->findModel($id);
+        $path = PetStorage::path($model->foto);
+        if ($path === null || !is_file($path)) {
+            throw new NotFoundHttpException('Este animal não tem fotografia.');
+        }
+
+        return $this->enviarFicheiro($path, $model->foto, str_ends_with($model->foto, '.webp') ? 'image/webp' : 'image/jpeg');
+    }
+
+    /**
+     * Documento de vacinas (PDF ou imagem). Só para o dono do animal.
+     */
+    public function actionDocumento($id): Response
+    {
+        $doc = AnimalDocumento::find()
+            ->alias('d')
+            ->innerJoinWith('animal a', false)
+            ->where(['d.id' => $id, 'a.id_user' => Yii::$app->user->id])
+            ->one();
+        $path = $doc ? PetStorage::path($doc->ficheiro) : null;
+        if ($path === null || !is_file($path)) {
+            throw new NotFoundHttpException('Este documento não existe ou não é de um animal seu.');
+        }
+
+        return $this->enviarFicheiro($path, $doc->nome_original, $doc->mime);
+    }
+
+    private function enviarFicheiro(string $path, string $nome, string $mime): Response
+    {
+        $response = Yii::$app->response;
+        // dados privados: o browser pode guardar, mas nenhum proxy pelo caminho
+        $response->headers->set('Cache-Control', 'private, max-age=86400');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox");
+
+        return $response->sendFile($path, $nome, ['mimeType' => $mime, 'inline' => true]);
     }
 
     /**
@@ -111,7 +221,20 @@ class PetController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        $model = $this->findModel($id);
+
+        // Um animal com reservas não pode ser apagado: as reservas e as faturas precisam dele
+        // (consulta direta à tabela: o modelo BookingAnimalQuarto ainda não existe)
+        $temReservas = (new \yii\db\Query())
+            ->from('{{%booking_animal_quarto}}')
+            ->where(['id_animal' => $model->id])
+            ->exists();
+        if ($temReservas) {
+            \Yii::$app->session->setFlash('pet-error', $model->nome . ' já tem reservas, por isso não pode ser removido.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        $model->delete();
 
         return $this->redirect(['index']);
     }
@@ -125,10 +248,15 @@ class PetController extends Controller
      */
     protected function findModel($id)
     {
-        if (($model = Animal::findOne(['id' => $id])) !== null) {
+        // Só encontra animais do próprio cliente: o id de um animal de outra pessoa dá 404
+        $model = Animal::find()
+            ->with(['racaPrincipal', 'racaSecundaria'])
+            ->where(['id' => $id, 'id_user' => \Yii::$app->user->id])
+            ->one();
+        if ($model !== null) {
             return $model;
         }
 
-        throw new NotFoundHttpException('The requested page does not exist.');
+        throw new NotFoundHttpException('Este animal não existe ou não está registado na sua conta.');
     }
 }

@@ -3,22 +3,30 @@
 declare(strict_types=1);
 
 /**
- * Janela de recorte da fotografia de perfil (uma por página). Comportamento em perfil.js.
+ * Janela de recorte de fotografias (uma por página). Comportamento em cropper.js.
+ * - Perfil (por defeito): avatar.js envia logo a foto recortada para perfil/avatar.
+ * - Animal ($para = 'animal'): pet.js mete a foto recortada no formulário, que é gravada com o resto.
  *
  * @var yii\web\View $this
+ * @var string|null $para 'perfil' (por defeito) ou 'animal'
  */
 
 use yii\helpers\Url;
+
+$para ??= 'perfil';
+$animal = $para === 'animal';
 ?>
-<input type="file" accept="image/jpeg,image/png,image/webp" hidden data-avatar-input>
+<input type="file" accept="image/jpeg,image/png,image/webp" hidden data-crop-input>
 
 <dialog class="pg-crop" data-cropper
+    <?php if (!$animal): ?>
         data-upload-url="<?= Url::to(['/perfil/avatar']) ?>"
         data-remove-url="<?= Url::to(['/perfil/avatar-remove']) ?>"
+    <?php endif; ?>
         aria-labelledby="crop-title">
     <div class="pg-crop__panel">
         <header class="pg-crop__head">
-            <h2 id="crop-title">Ajustar fotografia</h2>
+            <h2 id="crop-title"><?= $animal ? 'Ajustar fotografia do animal' : 'Ajustar fotografia' ?></h2>
             <button type="button" class="pg-crop__x" data-crop-cancel aria-label="Fechar">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
@@ -43,7 +51,7 @@ use yii\helpers\Url;
 
         <footer class="pg-crop__actions">
             <button type="button" class="pg-btn pg-btn--outline" data-crop-other>Escolher outra</button>
-            <button type="button" class="pg-btn pg-btn--primary" data-crop-save>Guardar fotografia</button>
+            <button type="button" class="pg-btn pg-btn--primary" data-crop-save><?= $animal ? 'Usar fotografia' : 'Guardar fotografia' ?></button>
         </footer>
     </div>
 </dialog>

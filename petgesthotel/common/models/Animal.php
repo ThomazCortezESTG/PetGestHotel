@@ -16,6 +16,9 @@ use yii\behaviors\BlameableBehavior;
  * @property int $id_user
  * @property int|null $id_raca_principal
  * @property int|null $id_raca_secundaria
+ * @property string|null $foto nome do ficheiro na pasta "animal.path" (sem regra: só o PetController o altera)
+ *
+ * @property AnimalDocumento[] $documentos documentos de vacinas
  *
  * @property BookingAnimalQuarto[] $bookingAnimalQuartos
  * @property Raca $racaPrincipal
@@ -114,6 +117,98 @@ class Animal extends \yii\db\ActiveRecord
     public function getRacaSecundaria()
     {
         return $this->hasOne(Raca::class, ['id' => 'id_raca_secundaria']);
+    }
+
+    /**
+     * Documentos de vacinas, do mais antigo para o mais recente.
+     */
+    public function getDocumentos()
+    {
+        return $this->hasMany(AnimalDocumento::class, ['id_animal' => 'id'])->orderBy(['id' => SORT_ASC]);
+    }
+
+    /**
+     * URL da fotografia (servida pelo PetController, só para o dono), ou null se não tiver.
+     * O nome do ficheiro vai no URL para a cache do browser mudar quando a foto muda.
+     */
+    public function getFotoUrl(): ?string
+    {
+        return $this->foto ? \yii\helpers\Url::to(['/pet/foto', 'id' => $this->id, 'v' => substr($this->foto, 0, 8)]) : null;
+    }
+
+    /** Ficheiros a apagar do disco depois de o animal ser apagado da base de dados. */
+    private array $ficheirosParaApagar = [];
+
+    public function beforeDelete()
+    {
+        if (!parent::beforeDelete()) {
+            return false;
+        }
+        // os documentos saem da BD em cascata; os ficheiros têm de ser apagados à mão
+        $this->ficheirosParaApagar = array_filter(array_merge(
+            [$this->foto],
+            AnimalDocumento::find()->select('ficheiro')->where(['id_animal' => $this->id])->column()
+        ));
+        return true;
+    }
+
+    public function afterDelete()
+    {
+        parent::afterDelete();
+        foreach ($this->ficheirosParaApagar as $nome) {
+            \common\components\PetStorage::delete($nome);
+        }
+    }
+
+    /**
+     * Espécie, a partir da raça principal ("Cão", "Gato", "Outros"), ou null sem raça.
+     */
+    public function getEspecie(): ?string
+    {
+        return $this->racaPrincipal?->tipo;
+    }
+
+    /**
+     * Raça em texto: "Labrador Retriever" ou "Labrador Retriever cruzado com Caniche (Poodle)".
+     */
+    public function getRacaTexto(): ?string
+    {
+        if ($this->racaPrincipal === null) {
+            return null;
+        }
+        $texto = $this->racaPrincipal->nome;
+        if ($this->racaSecundaria !== null) {
+            $texto .= ' cruzado com ' . $this->racaSecundaria->nome;
+        }
+        return $texto;
+    }
+
+    /**
+     * Idade a partir da data de nascimento: "3 anos", "8 meses", "2 semanas" ou null se não houver data.
+     */
+    public function getIdadeTexto(): ?string
+    {
+        if ($this->data === null || $this->data === '') {
+            return null;
+        }
+        try {
+            $nasc = new \DateTimeImmutable($this->data);
+        } catch (\Exception) {
+            return null;
+        }
+        $hoje = new \DateTimeImmutable('today');
+        if ($nasc > $hoje) {
+            return null;
+        }
+        $d = $nasc->diff($hoje);
+        if ($d->y > 0) {
+            return $d->y . ($d->y === 1 ? ' ano' : ' anos');
+        }
+        if ($d->m > 0) {
+            return $d->m . ($d->m === 1 ? ' mês' : ' meses');
+        }
+        $semanas = intdiv($d->days, 7);
+        return $semanas > 0 ? $semanas . ($semanas === 1 ? ' semana' : ' semanas') : 'Recém-nascido';
     }
 
     /**
