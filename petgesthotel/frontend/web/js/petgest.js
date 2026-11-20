@@ -157,4 +157,102 @@
             }
         });
     }
+
+    /* ---------- Toasts (mensagens flash) ----------
+       Fecham quando a barra de tempo acaba (pausa com o rato por cima ou com foco),
+       no botão X ou com Esc. Os erros (data-timeout="0") só fecham à mão. */
+    function closeToast(toast) {
+        if (toast.classList.contains('is-leaving')) {
+            return;
+        }
+        toast.classList.add('is-leaving');
+
+        var removed = false;
+        var remove = function () {
+            if (!removed) {
+                removed = true;
+                toast.remove();
+            }
+        };
+        // 2.º tempo: depois de sair, encolhe o espaço que ocupava (os outros toasts sobem com suavidade)
+        var collapse = function () {
+            toast.style.height = toast.offsetHeight + 'px';
+            void toast.offsetHeight;
+            toast.classList.add('is-collapsing');
+            toast.addEventListener('transitionend', function (e) {
+                if (e.target === toast && e.propertyName === 'height') {
+                    remove();
+                }
+            });
+            setTimeout(remove, 400);
+        };
+        // Só reage ao fim da animação de saída do próprio toast: os animationend da barra
+        // e do ícone também sobem até aqui e faziam-no desaparecer de repente.
+        toast.addEventListener('animationend', function onOut(e) {
+            if (e.target === toast && e.animationName === 'pg-toast-out') {
+                toast.removeEventListener('animationend', onOut);
+                collapse();
+            }
+        });
+        setTimeout(function () { if (!toast.classList.contains('is-collapsing')) { collapse(); } }, 900); // se a animação estiver desligada
+    }
+
+    function initToast(toast) {
+        var close = toast.querySelector('[data-toast-close]');
+        if (close) {
+            close.addEventListener('click', function () { closeToast(toast); });
+        }
+        var timer = toast.querySelector('.pg-toast__timer');
+        if (timer) {
+            // a barra é uma animação CSS: quando acaba, o toast fecha (e respeita a pausa no hover)
+            timer.addEventListener('animationend', function () { closeToast(toast); });
+        }
+    }
+    document.querySelectorAll('[data-toast]').forEach(initToast);
+
+    /**
+     * Mostra um toast a partir do JS (mesmo aspeto das mensagens flash do servidor).
+     * pgToast('Fotografia atualizada.', 'success' | 'info' | 'warning' | 'error')
+     */
+    var toastIcons = {
+        success: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+        info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/>',
+        warning: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.4v.1"/>',
+        error: '<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>'
+    };
+    var toastTimes = { success: 5, info: 6, warning: 8, error: 0 };
+    window.pgToast = function (message, type) {
+        type = toastIcons[type] ? type : 'info';
+        var box = document.querySelector('.pg-toasts');
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'pg-toasts';
+            box.setAttribute('aria-live', 'polite');
+            document.body.appendChild(box);
+        }
+        var secs = toastTimes[type];
+        var toast = document.createElement('div');
+        toast.className = 'pg-toast pg-toast--' + type;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        toast.setAttribute('data-toast', '');
+        toast.style.setProperty('--toast-time', secs + 's');
+        toast.innerHTML =
+            '<span class="pg-toast__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + toastIcons[type] + '</svg></span>' +
+            '<div class="pg-toast__msg"></div>' +
+            '<button type="button" class="pg-toast__close" data-toast-close aria-label="Fechar mensagem"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+            (secs > 0 ? '<span class="pg-toast__timer" aria-hidden="true"></span>' : '');
+        toast.querySelector('.pg-toast__msg').textContent = message; // texto, nunca HTML
+        box.appendChild(toast);
+        initToast(toast);
+        return toast;
+    };
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
+            var last = document.querySelectorAll('[data-toast]:not(.is-leaving)');
+            if (last.length) {
+                closeToast(last[last.length - 1]);
+            }
+        }
+    });
 })();
