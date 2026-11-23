@@ -145,6 +145,7 @@ class SiteController extends Controller
      */
     public function actionContact(): string|Response
     {
+        $this->layout = 'landing';
         $model = new ContactForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
@@ -156,9 +157,9 @@ class SiteController extends Controller
             );
 
             if ($sent) {
-                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
+                Yii::$app->session->setFlash('success', 'Obrigado pela mensagem! Vamos responder para o seu email o mais depressa possível.');
             } else {
-                Yii::$app->session->setFlash('error', 'There was an error sending your message.');
+                Yii::$app->session->setFlash('error', 'Não foi possível enviar a mensagem. Tente novamente ou ligue-nos.');
             }
 
             return $this->refresh();

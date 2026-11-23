@@ -6,7 +6,7 @@ return [
     'adminEmail' => 'admin@example.com',
     'supportEmail' => 'geral@petgesthotel.pt',
     'senderEmail' => 'noreply@example.com',
-    'senderName' => 'Example.com mailer',
+    'senderName' => 'PetGestHotel',
     'user.passwordResetTokenExpire' => 3600,
     'user.passwordMinLength' => 8,
     'backendUrl' => Yii::getAlias('@backendUrl', false) ?: '/backend/web',
