@@ -211,7 +211,7 @@ $servicos = [
     <div class="pg-container pg-faq">
         <div class="pg-faq__head" data-reveal>
             <h2 class="pg-title" id="faq-title">Perguntas frequentes</h2>
-            <p class="pg-lead">Não encontrou o que procura? Fale connosco pelo chat depois de criar conta.</p>
+            <p class="pg-lead">Não encontrou o que procura? <a href="<?= Url::to(['/site/contact']) ?>">Envie-nos uma mensagem</a> ou, se já tem conta, fale connosco pelo chat.</p>
         </div>
         <div class="pg-faq__list" data-reveal-group>
             <?php foreach ($faq as $pergunta => $resposta): ?>
