@@ -12,10 +12,17 @@ return [
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
     'bootstrap' => ['log'],
-    'modules' => [],
+    'modules' => [
+        'api' => [
+            'class' => 'backend\modules\api\Module',
+        ],
+    ],
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
@@ -33,11 +40,17 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                'POST api/auth/login' => 'api/auth/login',
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => ['api/animal', 'api/booking', 'api/historico'],
+                ],
             ],
         ],
     ],
     'params' => $params,
     'as access' => [
+        'except' => ['api/*'],
         'class' => 'yii\filters\AccessControl',
         'rules' => [
             [
