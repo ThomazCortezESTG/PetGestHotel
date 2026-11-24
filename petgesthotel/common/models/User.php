@@ -20,6 +20,7 @@ use yii\web\IdentityInterface;
  * @property string $verification_token
  * @property string $email
  * @property string $auth_key
+ * @property string|null $access_token token da API (app móvel)
  * @property int $status
  * @property int $created_at
  * @property int $updated_at
@@ -84,9 +85,21 @@ class User extends ActiveRecord implements IdentityInterface
     /**
      * {@inheritdoc}
      */
-    public static function findIdentityByAccessToken($token, $type = null): never
+    public static function findIdentityByAccessToken($token, $type = null): User|null
     {
-        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
+        if (!is_string($token) || $token === '') {
+            return null;
+        }
+
+        return static::findOne(['access_token' => $token, 'status' => self::STATUS_ACTIVE]);
+    }
+
+    /**
+     * Gera um novo token de acesso para a API (invalida o anterior).
+     */
+    public function generateAccessToken(): void
+    {
+        $this->access_token = Yii::$app->security->generateRandomString(64);
     }
 
     /**
