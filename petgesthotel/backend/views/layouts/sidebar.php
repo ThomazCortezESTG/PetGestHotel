@@ -46,6 +46,17 @@ use yii\helpers\Url;
                                     'url' => ['/animal/index'],
                                     'visible' => Yii::$app->user->can('admin') || Yii::$app->user->can('colaborador'),
                             ],
+                            (function () {
+                                $naoLidas = Yii::$app->user->isGuest ? 0 : \backend\controllers\ConversaController::naoLidasDe((int) Yii::$app->user->id);
+                                return [
+                                    'label' => 'Conversas',
+                                    'icon' => 'comments',
+                                    'url' => ['/conversa/index'],
+                                    'active' => Yii::$app->controller->id === 'conversa',
+                                    'badge' => $naoLidas > 0 ? '<span class="right badge badge-danger">' . $naoLidas . '</span>' : null,
+                                    'visible' => Yii::$app->user->can('colaborador'),
+                                ];
+                            })(),
                         // Podes adicionar aqui as próximas secções do PetGestHotel (Animais, Quartos, Reservas, etc.)
 
                             ['label' => 'FERRAMENTAS DEV', 'header' => true, 'visible' => Yii::$app->user->can('admin'),],

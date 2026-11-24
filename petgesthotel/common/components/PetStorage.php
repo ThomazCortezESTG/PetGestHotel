@@ -75,11 +75,12 @@ final class PetStorage
 
     /**
      * Guarda uma imagem redesenhada. $square = true recorta ao centro (fotografia do animal).
+     * $dir: pasta de destino (por omissão a dos animais; o chat usa a sua, ver ChatStorage).
      *
      * @return string nome do ficheiro gravado
      * @throws \RuntimeException com uma mensagem para o cliente
      */
-    public static function saveImage(string $tmp, int $maxSide, bool $square): string
+    public static function saveImage(string $tmp, int $maxSide, bool $square, ?string $dir = null): string
     {
         if (!function_exists('imagecreatefromstring')) {
             throw new \RuntimeException('O servidor não consegue processar imagens (falta a extensão GD do PHP).');
@@ -113,7 +114,7 @@ final class PetStorage
 
         $webp = function_exists('imagewebp');
         $name = self::newName($webp ? 'webp' : 'jpg');
-        $path = self::writableDir() . DIRECTORY_SEPARATOR . $name;
+        $path = self::writableDir($dir) . DIRECTORY_SEPARATOR . $name;
         $ok = $webp ? @imagewebp($dst, $path, 85) : @imagejpeg($dst, $path, 87);
         if (!$ok) {
             throw new \RuntimeException('Não foi possível guardar a imagem.');
@@ -143,20 +144,20 @@ final class PetStorage
         return $name;
     }
 
-    private static function newName(string $ext): string
+    public static function newName(string $ext): string
     {
         return bin2hex(random_bytes(12)) . '.' . $ext;
     }
 
-    private static function writableDir(): string
+    public static function writableDir(?string $dir = null): string
     {
-        $dir = self::dir();
+        $dir ??= self::dir();
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-            Yii::error('Não foi possível criar a pasta ' . $dir . ' (animal.path)', __METHOD__);
+            Yii::error('Não foi possível criar a pasta ' . $dir, __METHOD__);
             throw new \RuntimeException('Não foi possível guardar o ficheiro.');
         }
         if (!is_writable($dir)) {
-            Yii::error('Sem permissão de escrita em ' . $dir . ' (animal.path)', __METHOD__);
+            Yii::error('Sem permissão de escrita em ' . $dir, __METHOD__);
             throw new \RuntimeException('Não foi possível guardar o ficheiro.');
         }
         return $dir;
@@ -178,7 +179,7 @@ final class PetStorage
         return $angle !== 0 ? (imagerotate($img, $angle, 0) ?: $img) : $img;
     }
 
-    private static function iniBytes(string $key): int
+    public static function iniBytes(string $key): int
     {
         $v = trim((string) ini_get($key));
         if ($v === '' || $v === '0' || $v === '-1') {

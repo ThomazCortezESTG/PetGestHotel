@@ -98,6 +98,8 @@ class AuthController extends Controller
             'nome' => $profile?->nome,
             'telefone' => $profile?->telefone,
             'morada' => $profile?->morada,
+            // tópico MQTT das notificações deste utilizador (ver api/notificacoes)
+            'mqtt_topic' => \common\models\Notificacao::topico($user->id),
         ];
     }
 }

@@ -36,6 +36,9 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                     <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/site/login']) ?>">Entrar</a>
                     <a class="pg-btn pg-btn--primary" href="<?= Url::to(['/site/signup']) ?>">Criar conta</a>
                 <?php else: ?>
+                    <?php if (Yii::$app->user->can('viewOwnBooking')): ?>
+                        <?= $this->render('_notificacoes') ?>
+                    <?php endif; ?>
                     <div class="dropdown">
                         <?php
                         $identity = Yii::$app->user->identity;
@@ -56,6 +59,7 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                                 ?>
                                 <a href="#home">As minhas reservas</a>
                                 <?= Html::a('Os meus animais', ['pet/index']) ?>
+                                <?= Html::a('Mensagens', ['/conversa/index']) ?>
                                 <?php
                             }
                             ?>
