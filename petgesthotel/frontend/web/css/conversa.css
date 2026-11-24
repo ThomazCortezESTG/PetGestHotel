@@ -1,0 +1,94 @@
+/* Mensagens do cliente (lista e cabeçalho da conversa). O chat em si: common/assets/chat/chat.css */
+
+/* ---------- Lista ---------- */
+.pg-msgs__list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.pg-msgs__item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border: 1px solid var(--pg-line);
+    border-radius: var(--pg-radius);
+    background: var(--pg-white);
+    color: var(--pg-navy);
+    text-decoration: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pg-msgs__item:hover { border-color: var(--pg-teal); box-shadow: 0 6px 18px rgba(15, 47, 71, .08); color: var(--pg-navy); }
+.pg-msgs__item:focus-visible { outline: 3px solid rgba(28, 138, 140, .45); outline-offset: 2px; }
+.pg-msgs__body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.pg-msgs__top { display: flex; justify-content: space-between; gap: 12px; }
+.pg-msgs__top strong { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-msgs__top time { flex: none; font-size: 13px; color: var(--pg-ink-2); }
+.pg-msgs__meta { font-size: 14px; color: var(--pg-ink-2); }
+.pg-msgs__last { color: var(--pg-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-msgs__item--unread .pg-msgs__last { color: var(--pg-navy); font-weight: 600; }
+.pg-msgs__badge {
+    flex: none;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: var(--pg-orange);
+    color: var(--pg-navy);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* ---------- Avatar do responsável ---------- */
+.pg-msgs__avatar {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--pg-teal);
+    color: var(--pg-white);
+    font-weight: 700;
+}
+.pg-msgs__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pg-msgs__avatar--lg { width: 56px; height: 56px; font-size: 18px; }
+
+/* ---------- Cabeçalho da conversa ---------- */
+.pg-msgs__back { margin: 0 0 12px; }
+.pg-msgs__back a { font-weight: 600; color: var(--pg-teal-text); text-decoration: none; }
+.pg-msgs__back a:hover { text-decoration: underline; }
+.pg-msgs__head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.pg-msgs__head > div { flex: 1; min-width: 0; }
+.pg-msgs__who { margin: 0; font-family: var(--pg-font-display); font-size: 22px; font-weight: 700; }
+.pg-msgs__role { margin: 0; color: var(--pg-ink-2); }
+.pg-msgs__state {
+    flex: none;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--pg-teal-soft);
+    color: var(--pg-teal-dark);
+    font-size: 13px;
+    font-weight: 700;
+}
+.pg-msgs__state--concluida,
+.pg-msgs__state--cancelada,
+.pg-msgs__state--rejeitada { background: #EEF1F3; color: var(--pg-ink-2); }
+
+@media (max-width: 575px) {
+    .pg-msgs__state { display: none; }
+    .pg-msgs__item { padding: 14px; gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pg-msgs__item { transition: none; }
+}

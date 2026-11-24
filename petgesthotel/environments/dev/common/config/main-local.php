@@ -41,7 +41,7 @@ return [
             'dsn' => 'mysql:host=localhost;dbname=yii2advanced',
             'username' => 'root',
             'password' => '',
-            'charset' => 'utf8',
+            'charset' => 'utf8mb4', // utf8mb4: emojis no chat
         ],
         'mailer' => \yii\mail\MailerInterface::class,
     ],

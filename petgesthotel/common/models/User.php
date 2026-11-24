@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace common\models;
 
 use Yii;
-use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
@@ -25,6 +24,7 @@ use yii\web\IdentityInterface;
  * @property int $created_at
  * @property int $updated_at
  * @property string $password write-only password
+ * @property UserProfile|null $userProfile
  */
 class User extends ActiveRecord implements IdentityInterface
 {

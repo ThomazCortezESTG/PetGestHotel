@@ -61,6 +61,27 @@ return [
                     'controller' => ['api/racas' => 'api/raca'],
                     'only' => ['index', 'view', 'options'],
                 ],
+                [
+                    'class' => \yii\rest\UrlRule::class,
+                    'controller' => ['api/conversas' => 'api/conversa'],
+                    'only' => ['index', 'view', 'mensagens', 'enviar', 'lida', 'anexo'],
+                    'tokens' => ['{id}' => '<id:\\d+>', '{mensagem}' => '<mensagem:\\d+>'],
+                    'extraPatterns' => [
+                        'GET,HEAD {id}/mensagens' => 'mensagens',
+                        'POST {id}/mensagens' => 'enviar',
+                        'POST {id}/lida' => 'lida',
+                        'GET,HEAD {id}/mensagens/{mensagem}/anexo' => 'anexo',
+                    ],
+                ],
+                [
+                    'class' => \yii\rest\UrlRule::class,
+                    'controller' => ['api/notificacoes' => 'api/notificacao'],
+                    'only' => ['index', 'lida', 'lidas'],
+                    'extraPatterns' => [
+                        'POST lidas' => 'lidas',
+                        'POST {id}/lida' => 'lida',
+                    ],
+                ],
             ],
         ],
     ],
