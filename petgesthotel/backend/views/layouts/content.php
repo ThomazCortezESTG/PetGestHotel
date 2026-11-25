@@ -36,6 +36,17 @@ use yii\bootstrap4\Breadcrumbs;
 
     <!-- Main content -->
     <div class="content">
+        <?php // mensagens flash (setFlash) de qualquer página: success, info, warning, error ?>
+        <?php foreach (Yii::$app->session->getAllFlashes() as $tipo => $mensagens): ?>
+            <?php foreach ((array) $mensagens as $mensagem): ?>
+                <div class="container-fluid">
+                    <div class="alert alert-<?= ['error' => 'danger', 'danger' => 'danger', 'warning' => 'warning', 'info' => 'info'][$tipo] ?? 'success' ?> alert-dismissible fade show" role="<?= in_array($tipo, ['error', 'danger'], true) ? 'alert' : 'status' ?>">
+                        <?= \yii\helpers\Html::encode($mensagem) ?>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endforeach; ?>
         <?= $content ?><!-- /.container-fluid -->
     </div>
     <!-- /.content -->

@@ -5,6 +5,7 @@ use yii\helpers\Html;
 /** @var yii\web\View $this */
 /** @var common\models\User $model */
 /** @var common\models\UserProfile $profile */
+/** @var string $papel */
 
 $this->title = 'Update User: ' . $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Users', 'url' => ['index']];
@@ -18,6 +19,7 @@ $this->params['breadcrumbs'][] = 'Update';
     <?= $this->render('_form', [
             'model' => $model,
             'profile' => $profile,
+            'papel' => $papel,
     ]) ?>
 
 </div>

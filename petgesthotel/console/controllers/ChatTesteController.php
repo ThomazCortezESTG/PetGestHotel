@@ -45,8 +45,8 @@ class ChatTesteController extends Controller
         $db = Yii::$app->db;
         $idQuarto = (int) $db->createCommand('SELECT id FROM {{%quarto}} ORDER BY id LIMIT 1')->queryScalar();
         if ($idQuarto === 0) {
-            $db->createCommand()->insert('{{%quarto}}', ['categoria' => 'Teste', 'capacidade' => 2])->execute();
-            $idQuarto = (int) $db->getLastInsertID();
+            $this->stderr("Não há quartos. Corra php yii migrate (cria os quartos por omissão).\n");
+            return ExitCode::DATAERR;
         }
 
         $booking = new Booking([
@@ -62,6 +62,7 @@ class ChatTesteController extends Controller
             'id_quarto' => $idQuarto,
         ])->execute();
 
+        $booking->calcularPreco();
         $booking->confirmar($col->id);
 
         $this->stdout("Reserva #{$booking->id} confirmada para {$animal->nome} ({$c->username}), responsável: {$col->username}.\n");
