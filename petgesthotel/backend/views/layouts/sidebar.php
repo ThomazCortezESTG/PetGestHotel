@@ -38,7 +38,8 @@ use yii\helpers\Url;
                                     'label' => 'Utilizadores',
                                     'icon' => 'users',
                                     'url' => ['/user/index'],
-                                    'visible' => Yii::$app->user->can('admin') || Yii::$app->user->can('colaborador'),
+                                    // o UserController só deixa entrar admins (um colaborador recebia "acesso negado")
+                                    'visible' => Yii::$app->user->can('admin'),
                             ],
                             [
                                     'label' => 'Animais',
@@ -46,6 +47,19 @@ use yii\helpers\Url;
                                     'url' => ['/animal/index'],
                                     'visible' => Yii::$app->user->can('admin') || Yii::$app->user->can('colaborador'),
                             ],
+                            (function () {
+                                $pendentes = Yii::$app->user->can('viewBooking')
+                                    ? (int) \common\models\Booking::find()->where(['status' => \common\models\Booking::STATUS_PENDENTE])->count()
+                                    : 0;
+                                return [
+                                    'label' => 'Reservas',
+                                    'icon' => 'calendar-check',
+                                    'url' => ['/booking/index'],
+                                    'active' => Yii::$app->controller->id === 'booking',
+                                    'badge' => $pendentes > 0 ? '<span class="right badge badge-warning" title="Por aceitar">' . $pendentes . '</span>' : null,
+                                    'visible' => Yii::$app->user->can('viewBooking'),
+                                ];
+                            })(),
                             (function () {
                                 $naoLidas = Yii::$app->user->isGuest ? 0 : \backend\controllers\ConversaController::naoLidasDe((int) Yii::$app->user->id);
                                 return [

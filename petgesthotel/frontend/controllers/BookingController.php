@@ -13,13 +13,17 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use frontend\models\BookingSearch;
 
 /**
- * BookingController implements the CRUD actions for Booking model.
+ * Reservas do cliente: pedir, ver, alterar (só enquanto está pendente) e cancelar.
+ * Aceitar, rejeitar, check-in e check-out são no back-office (backend\controllers\BookingController).
+ *
+ * Só se veem e alteram as reservas do próprio cliente (findModel filtra por id_user).
  */
 class BookingController extends Controller
 {
+    public $layout = 'landing';
+
     /**
      * @inheritDoc
      */
@@ -31,13 +35,16 @@ class BookingController extends Controller
                 'access' => [
                     'class' => AccessControl::class,
                     'rules' => [
-                        ['allow' => true, 'roles' => ['@']],
+                        ['allow' => true, 'actions' => ['create'], 'roles' => ['createBooking']],
+                        ['allow' => true, 'actions' => ['update'], 'roles' => ['editOwnBooking']],
+                        ['allow' => true, 'actions' => ['cancelar'], 'roles' => ['cancelOwnBooking']],
+                        ['allow' => true, 'actions' => ['index', 'view'], 'roles' => ['viewOwnBooking']],
                     ],
                 ],
                 'verbs' => [
                     'class' => VerbFilter::className(),
                     'actions' => [
-                        'delete' => ['POST'],
+                        'cancelar' => ['POST'],
                     ],
                 ],
             ]
@@ -45,18 +52,27 @@ class BookingController extends Controller
     }
 
     /**
-     * Lists all Booking models.
+     * As reservas do cliente: primeiro as que ainda vão acontecer ou estão a decorrer, depois as anteriores.
      *
      * @return string
      */
     public function actionIndex()
     {
-        $searchModel = new BookingSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $reservas = Booking::find()
+            ->with(['bookingAnimalQuartos.animal.racaPrincipal', 'bookingAnimalQuartos.quarto', 'conversa.colaborador.userProfile'])
+            ->where(['id_user' => Yii::$app->user->id])
+            ->orderBy(['datainicio' => SORT_DESC])
+            ->all();
+
+        $ativas = [Booking::STATUS_PENDENTE, Booking::STATUS_CONFIRMADA, Booking::STATUS_EM_CURSO];
+        $proximas = array_values(array_filter($reservas, fn (Booking $b) => in_array($b->status, $ativas, true)));
+        // as próximas pela ordem em que acontecem
+        usort($proximas, fn (Booking $a, Booking $b) => strcmp($a->datainicio, $b->datainicio));
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
+            'proximas' => $proximas,
+            'anteriores' => array_values(array_filter($reservas, fn (Booking $b) => !in_array($b->status, $ativas, true))),
+            'temAnimais' => Animal::find()->where(['id_user' => Yii::$app->user->id])->exists(),
         ]);
     }
 
@@ -74,207 +90,185 @@ class BookingController extends Controller
     }
 
     /**
-     * Creates a new Booking model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
+     * Pedir uma reserva (fica pendente até o hotel a aceitar no back-office).
      * @return string|\yii\web\Response
      */
     public function actionCreate()
     {
-        $model    = new Booking();
-        $quartos  = Quarto::find()->all();
-        $animais  = Animal::find()->where(['id_user' => Yii::$app->user->id])->all();
-        $servicos = ServicosExtras::find()->all();
+        $model = new Booking();
+        $escolhasQuartos = [];
+        $escolhasServicos = [];
 
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post())) {
-                $escolhas  = array_filter(Yii::$app->request->post('quartos', [])); // [id_animal => id_quarto]
-                $idServico = Yii::$app->request->post('id_servico');
+        if ($this->request->isPost && $model->load($this->request->post())) {
+            $model->id_user = Yii::$app->user->id;
+            $model->status  = Booking::STATUS_PENDENTE;
+            $model->preco   = 0; // recalculado depois
 
-                $model->id_user = Yii::$app->user->id;
-                $model->status  = 'pendente';
-                $model->preco   = 0; // recalculado depois
+            $escolhasQuartos  = array_filter((array) $this->request->post('quartos', []));      // [id_animal => id_quarto]
+            $escolhasServicos = array_unique(array_filter((array) $this->request->post('servicos', [])));
 
-                $transaction = Yii::$app->db->beginTransaction();
-                try {
-                    if (empty($escolhas)) {
-                        throw new \Exception('Seleciona pelo menos um animal e um quarto.');
-                    }
-                    if (count($escolhas) !== count(array_unique($escolhas))) {
-                        throw new \Exception('Cada animal tem de ter um quarto diferente.');
-                    }
-                    if (!$model->save()) {
-                        throw new \Exception('Erro ao guardar a reserva.');
-                    }
-
-                    foreach ($escolhas as $idAnimal => $idQuarto) {
-                        $animal = Animal::findOne(['id' => $idAnimal, 'id_user' => Yii::$app->user->id]);
-                        $quarto = Quarto::findOne($idQuarto);
-                        if (!$animal || !$quarto) {
-                            throw new \Exception('Animal ou quarto inválido.');
-                        }
-
-                        $baq = new BookingAnimalQuarto([
-                            'id_booking' => $model->id,
-                            'id_animal'  => $animal->id,
-                            'id_quarto'  => $quarto->id,
-                        ]);
-                        $baq->save(false);
-
-                        if ($idServico) {
-                            $bas = new BookingAnimalServico([
-                                'id_booking_animal' => $baq->id,
-                                'id_servico'        => $idServico,
-                            ]);
-                            $bas->save(false);
-                        }
-                    }
-
-                    $model->calcularPreco();
-                    $transaction->commit();
-
-                    return $this->redirect(['view', 'id' => $model->id]);
-                } catch (\Exception $e) {
-                    $transaction->rollBack();
-                    Yii::$app->session->setFlash('error', $e->getMessage());
-                }
+            if ($this->guardar($model, $escolhasQuartos, $escolhasServicos)) {
+                Yii::$app->session->setFlash('success', 'Pedido de reserva enviado. Vai receber uma notificação quando o hotel responder.');
+                return $this->redirect(['view', 'id' => $model->id]);
             }
         } else {
             $model->loadDefaultValues();
         }
 
-        return $this->render('create', [
-            'model'    => $model,
-            'quartos'  => $quartos,
-            'animais'  => $animais,
-            'servicos' => $servicos,
-        ]);
+        return $this->render('create', $this->dadosFormulario($model, $escolhasQuartos, $escolhasServicos));
     }
 
     /**
-     * Updates an existing Booking model.
-     * If update is successful, the browser will be redirected to the 'view' page.
+     * Alterar o pedido: só enquanto o hotel ainda não respondeu (pendente).
      * @param int $id ID
      * @return string|\yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
     public function actionUpdate($id)
     {
-        $model    = $this->findModel($id);
-        $quartos  = Quarto::find()->all();
-        $animais  = Animal::find()->where(['id_user' => Yii::$app->user->id])->all();
-        $servicos = ServicosExtras::find()->all();
+        $model = $this->findModel($id);
+        if (!$model->podeSerEditadaPeloCliente()) {
+            Yii::$app->session->setFlash('warning', 'Esta reserva já foi ' . mb_strtolower($model->getStatusLabel()) . ' pelo hotel, por isso já não pode ser alterada.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
 
         // escolhas já guardadas
-        $linhas = BookingAnimalQuarto::find()->where(['id_booking' => $model->id])->all();
-
+        $linhas = $model->bookingAnimalQuartos;
         $escolhasQuartos = [];   // [id_animal => id_quarto]
         foreach ($linhas as $l) {
             $escolhasQuartos[$l->id_animal] = $l->id_quarto;
         }
-
         $escolhasServicos = BookingAnimalServico::find()
             ->select('id_servico')
-            ->where(['id_booking_animal' => array_map(fn($l) => $l->id, $linhas)])
+            ->where(['id_booking_animal' => array_map(fn ($l) => $l->id, $linhas)])
             ->distinct()
             ->column();
 
         if ($this->request->isPost && $model->load($this->request->post())) {
-            $postQuartos = array_filter(Yii::$app->request->post('quartos', []));
-            $postServicos = array_unique(array_filter((array) Yii::$app->request->post('servicos', [])));
+            $model->status = Booking::STATUS_PENDENTE; // o formulário não pode mudar o estado
+            $escolhasQuartos  = array_filter((array) $this->request->post('quartos', []));
+            $escolhasServicos = array_unique(array_filter((array) $this->request->post('servicos', [])));
 
-            $transaction = Yii::$app->db->beginTransaction();
-            try {
-                if (empty($postQuartos)) {
-                    throw new \Exception('Seleciona pelo menos um animal e um quarto.');
-                }
-                if (count($postQuartos) !== count(array_unique($postQuartos))) {
-                    throw new \Exception('Cada animal tem de ter um quarto diferente.');
-                }
-                if (!$model->save()) {
-                    throw new \Exception('Erro ao guardar a reserva.');
-                }
-
-                // apaga as ligações antigas e recria (serviços primeiro, por causa da FK)
-                $idsAntigos = array_map(fn($l) => $l->id, $linhas);
-                if ($idsAntigos) {
-                    BookingAnimalServico::deleteAll(['id_booking_animal' => $idsAntigos]);
-                }
-                BookingAnimalQuarto::deleteAll(['id_booking' => $model->id]);
-
-                foreach ($postQuartos as $idAnimal => $idQuarto) {
-                    $animal = Animal::findOne(['id' => $idAnimal, 'id_user' => Yii::$app->user->id]);
-                    $quarto = Quarto::findOne($idQuarto);
-                    if (!$animal || !$quarto) {
-                        throw new \Exception('Animal ou quarto inválido.');
-                    }
-
-                    $baq = new BookingAnimalQuarto([
-                        'id_booking' => $model->id,
-                        'id_animal'  => $animal->id,
-                        'id_quarto'  => $quarto->id,
-                    ]);
-                    if (!$baq->save(false)) {
-                        throw new \Exception('Erro ao guardar o quarto.');
-                    }
-
-                    foreach ($postServicos as $idServico) {
-                        $bas = new BookingAnimalServico([
-                            'id_booking_animal' => $baq->id,
-                            'id_servico'        => $idServico,
-                        ]);
-                        $bas->save(false);
-                    }
-                }
-
-                $model->calcularPreco();
-                $transaction->commit();
+            if ($this->guardar($model, $escolhasQuartos, $escolhasServicos)) {
+                Yii::$app->session->setFlash('success', 'Pedido de reserva atualizado.');
                 return $this->redirect(['view', 'id' => $model->id]);
-            } catch (\Exception $e) {
-                $transaction->rollBack();
-                Yii::$app->session->setFlash('error', $e->getMessage());
-                // em caso de erro, mostra o que o utilizador acabou de escolher
-                $escolhasQuartos  = $postQuartos;
-                $escolhasServicos = $postServicos;
             }
         }
 
-        return $this->render('update', [
-            'model'            => $model,
-            'quartos'          => $quartos,
-            'animais'          => $animais,
-            'servicos'         => $servicos,
-            'escolhasQuartos'  => $escolhasQuartos,
-            'escolhasServicos' => $escolhasServicos,
-        ]);
+        return $this->render('update', $this->dadosFormulario($model, $escolhasQuartos, $escolhasServicos));
     }
 
     /**
-     * Deletes an existing Booking model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * Cancelar (em vez de apagar: o hotel e o chat precisam do histórico).
      * @param int $id ID
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
+    public function actionCancelar($id)
     {
-        $this->findModel($id)->delete();
-
-        return $this->redirect(['index']);
+        $model = $this->findModel($id);
+        if ($model->cancelar()) {
+            Yii::$app->session->setFlash('success', 'Reserva cancelada.');
+        } else {
+            Yii::$app->session->setFlash('error', $model->getFirstError('status'));
+        }
+        return $this->redirect(['view', 'id' => $model->id]);
     }
 
     /**
-     * Finds the Booking model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
+     * Guarda a reserva e as linhas (um quarto por animal; os serviços aplicam-se a cada animal).
+     * Em caso de erro, deixa uma mensagem flash e devolve false (nada fica gravado).
+     */
+    private function guardar(Booking $model, array $escolhasQuartos, array $escolhasServicos): bool
+    {
+        $nova = $model->isNewRecord;
+        $transaction = Yii::$app->db->beginTransaction();
+        try {
+            if (empty($escolhasQuartos)) {
+                throw new \DomainException('Escolha pelo menos um animal e o quarto onde vai ficar.');
+            }
+            if ($nova && $model->datainicio < date('Y-m-d')) {
+                $model->addError('datainicio', 'A data de entrada não pode ser no passado.');
+            }
+            if ($model->hasErrors() || !$model->save()) {
+                throw new \DomainException('Confirme as datas da estadia.');
+            }
+
+            // apaga as ligações antigas e recria (serviços primeiro, por causa da FK)
+            $idsAntigos = BookingAnimalQuarto::find()->select('id')->where(['id_booking' => $model->id])->column();
+            if ($idsAntigos) {
+                BookingAnimalServico::deleteAll(['id_booking_animal' => $idsAntigos]);
+            }
+            BookingAnimalQuarto::deleteAll(['id_booking' => $model->id]);
+
+            $servicosValidos = ServicosExtras::find()->select('id')->where(['id' => $escolhasServicos])->column();
+            foreach ($escolhasQuartos as $idAnimal => $idQuarto) {
+                $animal = Animal::findOne(['id' => $idAnimal, 'id_user' => Yii::$app->user->id]);
+                $quarto = Quarto::findOne($idQuarto);
+                if (!$animal || !$quarto) {
+                    throw new \DomainException('Animal ou quarto inválido.');
+                }
+
+                $baq = new BookingAnimalQuarto([
+                    'id_booking' => $model->id,
+                    'id_animal'  => $animal->id,
+                    'id_quarto'  => $quarto->id,
+                ]);
+                if (!$baq->save(false)) {
+                    throw new \DomainException('Não foi possível guardar o quarto.');
+                }
+
+                foreach ($servicosValidos as $idServico) {
+                    (new BookingAnimalServico([
+                        'id_booking_animal' => $baq->id,
+                        'id_servico'        => $idServico,
+                    ]))->save(false);
+                }
+            }
+
+            $model->calcularPreco();
+            $transaction->commit();
+            return true;
+        } catch (\DomainException $e) {
+            $transaction->rollBack();
+            if ($nova) {
+                // se a reserva chegou a ser inserida antes do erro, com o rollback volta a ser nova
+                $model->setAttribute('id', null);
+                $model->setIsNewRecord(true);
+            }
+            Yii::$app->session->setFlash('error', $e->getMessage());
+            return false;
+        }
+    }
+
+    private function dadosFormulario(Booking $model, array $escolhasQuartos, array $escolhasServicos): array
+    {
+        return [
+            'model'            => $model,
+            'quartos'          => Quarto::find()->orderBy(['preco' => SORT_ASC])->all(),
+            'animais'          => Animal::find()->with('racaPrincipal')->where(['id_user' => Yii::$app->user->id])->orderBy(['nome' => SORT_ASC])->all(),
+            'servicos'         => ServicosExtras::find()->orderBy(['preco' => SORT_ASC])->all(),
+            'escolhasQuartos'  => $escolhasQuartos,
+            'escolhasServicos' => $escolhasServicos,
+        ];
+    }
+
+    /**
+     * Só as reservas do próprio cliente: o número de uma reserva alheia dá 404.
      * @param int $id ID
      * @return Booking the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = Booking::findOne(['id' => $id])) !== null) {
+        $model = Booking::find()
+            ->with(['bookingAnimalQuartos.animal.racaPrincipal', 'bookingAnimalQuartos.quarto', 'bookingAnimalQuartos.servicos', 'conversa.colaborador.userProfile'])
+            ->where(['id' => $id, 'id_user' => Yii::$app->user->id])
+            ->one();
+        if ($model !== null) {
             return $model;
         }
 
-        throw new NotFoundHttpException('The requested page does not exist.');
+        throw new NotFoundHttpException('Esta reserva não existe ou não é sua.');
     }
 }

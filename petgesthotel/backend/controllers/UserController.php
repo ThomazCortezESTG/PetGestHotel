@@ -2,6 +2,8 @@
 
 namespace backend\controllers;
 
+use common\components\Papeis;
+use common\models\Conversa;
 use common\models\User;
 use backend\models\UserSearch;
 use common\models\UserProfile;
@@ -89,11 +91,14 @@ class UserController extends Controller
                 }
                 $model->generateAuthKey();
                 $model->status = 10;
+                $papel = (string) $this->request->post('papel', Papeis::CLIENTE);
 
-                if ($model->save()) {
+                if (isset(Papeis::lista()[$papel]) && $model->save()) {
                     $profile->user_id = $model->id;
                     if ($profile->save()) {
-                        Yii::$app->session->setFlash('success', 'Utilizador criado com sucesso.');
+                        $auth = Yii::$app->authManager;
+                        $auth->assign($auth->getRole($papel), $model->id);
+                        Yii::$app->session->setFlash('success', 'Utilizador criado com sucesso (' . Papeis::nome($papel) . ').');
                         return $this->redirect(['view', 'id' => $model->id]);
                     }
                 }
@@ -105,6 +110,7 @@ class UserController extends Controller
         return $this->render('create', [
             'model' => $model,
             'profile' => $profile,
+            'papel' => (string) $this->request->post('papel', Papeis::CLIENTE),
         ]);
     }
 
@@ -121,16 +127,33 @@ class UserController extends Controller
         // Carrega o perfil existente ou cria um novo caso o utilizador ainda não tenha perfil
         $profile = $model->userProfile ?? new UserProfile(['user_id' => $model->id]);
 
+        $papelAtual = Papeis::de($model->id);
+        $papel = (string) $this->request->post('papel', $papelAtual ?? Papeis::CLIENTE);
+
         if ($this->request->isPost && $model->load($this->request->post()) && $profile->load($this->request->post())) {
             if ($model->save() && $profile->save()) {
-                Yii::$app->session->setFlash('success', 'Utilizador atualizado com sucesso.');
-                return $this->redirect(['view', 'id' => $model->id]);
+                try {
+                    Papeis::mudar($model->id, $papel, (int) Yii::$app->user->id);
+                    $aviso = '';
+                    if ($papelAtual !== $papel) {
+                        $aviso = ' Papel: ' . Papeis::nome($papel) . '.';
+                    }
+                    // desativado: deixa de poder acompanhar reservas
+                    if ((int) $model->status !== User::STATUS_ACTIVE && ($n = Conversa::largarResponsavel($model->id)) > 0) {
+                        $aviso .= ' ' . $n . ' conversa(s) ficaram sem responsável.';
+                    }
+                    Yii::$app->session->setFlash('success', 'Utilizador atualizado com sucesso.' . $aviso);
+                    return $this->redirect(['view', 'id' => $model->id]);
+                } catch (\InvalidArgumentException $e) {
+                    Yii::$app->session->setFlash('error', $e->getMessage());
+                }
             }
         }
 
         return $this->render('update', [
             'model' => $model,
             'profile' => $profile,
+            'papel' => $papel,
         ]);
     }
 
@@ -144,10 +167,15 @@ class UserController extends Controller
     public function actionDelete($id)
     {
         $model = $this->findModel($id);
+        if ((int) $model->id === (int) Yii::$app->user->id) {
+            Yii::$app->session->setFlash('error', 'Não pode desativar a sua própria conta.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
         $model->status = 0; // Marca como apagado (Soft Delete)
         $model->save(false); // Guarda sem forçar validação de password
+        $n = Conversa::largarResponsavel($model->id);
 
-        Yii::$app->session->setFlash('success', 'Utilizador desativado com sucesso.');
+        Yii::$app->session->setFlash('success', 'Utilizador desativado com sucesso.' . ($n > 0 ? ' ' . $n . ' conversa(s) ficaram sem responsável.' : ''));
 
         return $this->redirect(['index']);
     }

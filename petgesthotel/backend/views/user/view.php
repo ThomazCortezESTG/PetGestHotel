@@ -40,6 +40,10 @@ $this->params['breadcrumbs'][] = $this->title;
                             'value' => $model->userProfile ? $model->userProfile->n_contribuinte : null,
                     ],
                     'email:email',
+                    [
+                            'label' => 'Papel',
+                            'value' => \common\components\Papeis::nome(\common\components\Papeis::de((int) $model->id)),
+                    ],
                     'status',
                     'created_at:datetime',
                     'updated_at:datetime',
