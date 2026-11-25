@@ -6,16 +6,17 @@ declare(strict_types=1);
  * Formulário da reserva (pedir e alterar), no estilo do formulário dos animais: grupos com título à
  * esquerda e, ao lado, o resumo com o preço, que se atualiza enquanto se escolhe (web/js/booking.js).
  *
- * Envia: Booking[datainicio], Booking[datafim], quartos[id_animal] = id_quarto (vazio = o animal não vem)
- * e servicos[] (aplicados a cada animal).
+ * Cada animal tem o seu quarto, os seus serviços extra e, se quiser, datas próprias dentro das da reserva.
+ * Envia: Booking[datainicio], Booking[datafim] e, por animal,
+ *   quartos[id] = id_quarto (vazio = não vem), servicos[id][] = id_servico,
+ *   datas[id][proprias] = 1, datas[id][inicio], datas[id][fim].
  *
  * @var yii\web\View $this
  * @var common\models\Booking $model
  * @var common\models\Quarto[] $quartos
  * @var common\models\Animal[] $animais
  * @var common\models\ServicosExtras[] $servicos
- * @var array $escolhasQuartos [id_animal => id_quarto]
- * @var array $escolhasServicos [id_servico]
+ * @var array $escolhas [id_animal => ['quarto', 'servicos', 'proprias', 'inicio', 'fim']]
  */
 
 use yii\bootstrap5\ActiveForm;
@@ -29,7 +30,7 @@ if ($isNew && empty($model->datainicio)) {
 }
 $fmtPreco = static fn ($v): string => number_format((float) $v, 2, ',', ' ') . ' €';
 // se só há um animal, já vem escolhido (no quarto mais barato)
-$soUmAnimal = count($animais) === 1 && $escolhasQuartos === [] && $isNew;
+$soUmAnimal = count($animais) === 1 && $escolhas === [] && $isNew;
 ?>
 
 <?php if ($animais === []): ?>
@@ -51,7 +52,7 @@ $soUmAnimal = count($animais) === 1 && $escolhasQuartos === [] && $isNew;
 ]); ?>
 
     <div class="pg-acct__group" role="group" aria-labelledby="h-datas">
-        <div class="pg-acct__group-head"><h2 id="h-datas">Datas</h2><p>O dia em que deixa o animal e o dia em que o vem buscar.</p></div>
+        <div class="pg-acct__group-head"><h2 id="h-datas">Datas</h2><p>O dia em que deixa os animais e o dia em que os vem buscar.</p></div>
         <div class="pg-acct__fields pg-bk-form__dates">
             <?= $form->field($model, 'datainicio')
                 ->input('date', ['min' => $isNew ? $hoje : null, 'data-bk-inicio' => true, 'required' => true])
@@ -64,11 +65,17 @@ $soUmAnimal = count($animais) === 1 && $escolhasQuartos === [] && $isNew;
     </div>
 
     <div class="pg-acct__group" role="group" aria-labelledby="h-animais">
-        <div class="pg-acct__group-head"><h2 id="h-animais">Animais e quartos</h2><p>Escolha o quarto de cada animal que vai ficar. Os que não escolher ficam em casa.</p></div>
+        <div class="pg-acct__group-head">
+            <h2 id="h-animais">Animais</h2>
+            <p>Para cada animal que vem: o quarto, os serviços extra e, se precisar, datas diferentes.</p>
+        </div>
         <div class="pg-bk-form__animals">
             <?php foreach ($animais as $animal):
-                $escolhido = (string) ($escolhasQuartos[$animal->id] ?? ($soUmAnimal ? $quartos[0]->id ?? '' : ''));
-                $grupo = 'bk-animal-' . $animal->id;
+                $id = (int) $animal->id;
+                $e = $escolhas[$id] ?? [];
+                $escolhido = (string) ($e['quarto'] ?? ($soUmAnimal ? ($quartos[0]->id ?? '') : ''));
+                $servEscolhidos = array_map('intval', $e['servicos'] ?? []);
+                $proprias = !empty($e['proprias']);
             ?>
                 <fieldset class="pg-bk-animal<?= $escolhido !== '' ? ' is-on' : '' ?>" data-bk-animal data-nome="<?= Html::encode($animal->nome) ?>">
                     <legend class="pg-bk-animal__head">
@@ -78,40 +85,57 @@ $soUmAnimal = count($animais) === 1 && $escolhasQuartos === [] && $isNew;
                             <small><?= Html::encode($animal->getRacaTexto() ?? $animal->getEspecie() ?? 'Raça não indicada') ?></small>
                         </span>
                     </legend>
-                    <div class="pg-bk-rooms">
+
+                    <div class="pg-bk-rooms" role="radiogroup" aria-label="Quarto de <?= Html::encode($animal->nome) ?>">
                         <label class="pg-bk-room pg-bk-room--none">
-                            <input type="radio" name="quartos[<?= $animal->id ?>]" value="" data-preco="0"<?= $escolhido === '' ? ' checked' : '' ?>>
+                            <input type="radio" name="quartos[<?= $id ?>]" value="" data-preco="0"<?= $escolhido === '' ? ' checked' : '' ?>>
                             <span class="pg-bk-room__name">Não vem</span>
                             <span class="pg-bk-room__price">desta vez</span>
                         </label>
                         <?php foreach ($quartos as $q): ?>
                             <label class="pg-bk-room">
-                                <input type="radio" name="quartos[<?= $animal->id ?>]" value="<?= $q->id ?>" data-preco="<?= Html::encode((string) $q->preco) ?>" data-quarto="<?= Html::encode(ucfirst($q->categoria)) ?>"<?= $escolhido === (string) $q->id ? ' checked' : '' ?>>
+                                <input type="radio" name="quartos[<?= $id ?>]" value="<?= $q->id ?>" data-preco="<?= Html::encode((string) $q->preco) ?>" data-quarto="<?= Html::encode(ucfirst($q->categoria)) ?>"<?= $escolhido === (string) $q->id ? ' checked' : '' ?>>
                                 <span class="pg-bk-room__name"><?= Html::encode(ucfirst($q->categoria)) ?></span>
                                 <span class="pg-bk-room__price"><?= $fmtPreco($q->preco) ?> <small>/ noite</small></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
-                </fieldset>
-            <?php endforeach; ?>
-        </div>
-    </div>
 
-    <div class="pg-acct__group" role="group" aria-labelledby="h-servicos">
-        <div class="pg-acct__group-head"><h2 id="h-servicos">Serviços extra <span class="pg-acct__optional">opcional</span></h2><p>Aplicam-se a cada animal que fica no hotel.</p></div>
-        <div class="pg-bk-services">
-            <?php foreach ($servicos as $s): ?>
-                <label class="pg-bk-service">
-                    <input type="checkbox" name="servicos[]" value="<?= $s->id ?>" data-preco="<?= Html::encode((string) $s->preco) ?>" data-nome="<?= Html::encode($s->nome) ?>"<?= in_array((string) $s->id, array_map('strval', $escolhasServicos), true) ? ' checked' : '' ?>>
-                    <span class="pg-bk-service__check" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
-                    </span>
-                    <span class="pg-bk-service__text">
-                        <span class="pg-bk-service__name"><?= Html::encode($s->nome) ?></span>
-                        <?php if ($s->descricao): ?><span class="pg-bk-service__desc"><?= Html::encode($s->descricao) ?></span><?php endif; ?>
-                    </span>
-                    <span class="pg-bk-service__price"><?= $fmtPreco($s->preco) ?></span>
-                </label>
+                    <?php // só aparece quando o animal vem (classe is-on, posta pelo booking.js) ?>
+                    <div class="pg-bk-animal__more">
+                        <fieldset class="pg-bk-extras">
+                            <legend class="pg-bk-extras__title">Serviços extra para <?= Html::encode($animal->nome) ?> <span class="pg-acct__optional">opcional</span></legend>
+                            <div class="pg-bk-extras__list">
+                                <?php foreach ($servicos as $s): ?>
+                                    <label class="pg-bk-chip" title="<?= Html::encode((string) $s->descricao) ?>">
+                                        <input type="checkbox" name="servicos[<?= $id ?>][]" value="<?= $s->id ?>" data-preco="<?= Html::encode((string) $s->preco) ?>" data-nome="<?= Html::encode($s->nome) ?>"<?= in_array((int) $s->id, $servEscolhidos, true) ? ' checked' : '' ?>>
+                                        <span class="pg-bk-chip__check" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                                        <span class="pg-bk-chip__name"><?= Html::encode($s->nome) ?></span>
+                                        <span class="pg-bk-chip__price"><?= $fmtPreco($s->preco) ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </fieldset>
+
+                        <div class="pg-bk-own">
+                            <label class="pg-bk-own__toggle">
+                                <input type="checkbox" name="datas[<?= $id ?>][proprias]" value="1" data-bk-proprias<?= $proprias ? ' checked' : '' ?>>
+                                <span>Datas diferentes para <?= Html::encode($animal->nome) ?></span>
+                            </label>
+                            <div class="pg-bk-own__dates">
+                                <label>
+                                    <span>Entrada de <?= Html::encode($animal->nome) ?></span>
+                                    <input type="date" class="form-control" name="datas[<?= $id ?>][inicio]" value="<?= Html::encode((string) ($e['inicio'] ?? '')) ?>" data-bk-a-inicio>
+                                </label>
+                                <label>
+                                    <span>Saída de <?= Html::encode($animal->nome) ?></span>
+                                    <input type="date" class="form-control" name="datas[<?= $id ?>][fim]" value="<?= Html::encode((string) ($e['fim'] ?? '')) ?>" data-bk-a-fim>
+                                </label>
+                                <p class="pg-bk-own__hint">Dentro das datas da reserva.</p>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
             <?php endforeach; ?>
         </div>
     </div>

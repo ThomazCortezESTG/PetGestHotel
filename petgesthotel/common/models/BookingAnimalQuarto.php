@@ -11,6 +11,8 @@ use Yii;
  * @property int $id_booking
  * @property int $id_animal
  * @property int $id_quarto
+ * @property string|null $datainicio datas próprias deste animal (vazias = as da reserva)
+ * @property string|null $datafim
  *
  * @property Animal $animal
  * @property Booking $booking
@@ -39,6 +41,8 @@ class BookingAnimalQuarto extends \yii\db\ActiveRecord
         return [
             [['id_booking', 'id_animal', 'id_quarto'], 'required'],
             [['id_booking', 'id_animal', 'id_quarto'], 'integer'],
+            [['datainicio', 'datafim'], 'default', 'value' => null],
+            [['datainicio', 'datafim'], 'date', 'format' => 'php:Y-m-d'],
             [['id_booking'], 'exist', 'skipOnError' => true, 'targetClass' => Booking::class, 'targetAttribute' => ['id_booking' => 'id']],
             [['id_animal'], 'exist', 'skipOnError' => true, 'targetClass' => Animal::class, 'targetAttribute' => ['id_animal' => 'id']],
             [['id_quarto'], 'exist', 'skipOnError' => true, 'targetClass' => Quarto::class, 'targetAttribute' => ['id_quarto' => 'id']],
@@ -118,4 +122,29 @@ class BookingAnimalQuarto extends \yii\db\ActiveRecord
         return $this->hasMany(ServicosExtras::class, ['id' => 'id_servico'])->viaTable('booking_animal_servico', ['id_booking_animal' => 'id']);
     }
 
+    // ===================================================================== datas por animal
+
+    /** Entrada deste animal (a própria, ou a da reserva). */
+    public function getEntrada(): string
+    {
+        return $this->datainicio ?: (string) $this->booking->datainicio;
+    }
+
+    /** Saída deste animal (a própria, ou a da reserva). */
+    public function getSaida(): string
+    {
+        return $this->datafim ?: (string) $this->booking->datafim;
+    }
+
+    /** O animal tem datas diferentes das da reserva. */
+    public function temDatasProprias(): bool
+    {
+        return $this->getEntrada() !== $this->booking->datainicio || $this->getSaida() !== $this->booking->datafim;
+    }
+
+    /** Noites deste animal (mínimo 1, como no preço da reserva). */
+    public function getNoites(): int
+    {
+        return max(1, (int) (new \DateTime($this->getEntrada()))->diff(new \DateTime($this->getSaida()))->days);
+    }
 }

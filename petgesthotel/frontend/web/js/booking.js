@@ -1,7 +1,9 @@
 /*
  * Formulário da reserva (frontend/views/booking/_form.php): noites, resumo e preço em direto.
- * O preço que conta é o que o servidor calcula ao guardar (Booking::calcularPreco); este é a estimativa:
- *   (preço do quarto de cada animal × noites) + (serviços escolhidos × animais que ficam)
+ * O preço que conta é o que o servidor calcula ao guardar (Booking::calcularPreco); este é a estimativa,
+ * calculada da mesma forma, animal a animal:
+ *   (preço do quarto × noites desse animal) + serviços escolhidos para esse animal
+ * As noites de um animal são as das datas próprias (se marcou "Datas diferentes") ou as da reserva.
  */
 (function () {
     'use strict';
@@ -25,18 +27,25 @@
         return new Date(+p[0], +p[1] - 1, +p[2]);
     }
 
-    function noites() {
-        var a = data(inicio.value);
-        var b = data(fim.value);
-        if (!a || !b) { return 0; }
-        return Math.round((b - a) / 86400000);
+    function noitesEntre(a, b) {
+        var da = data(a);
+        var db = data(b);
+        if (!da || !db) { return 0; }
+        return Math.round((db - da) / 86400000);
     }
 
-    function linha(texto, valor, classe) {
+    function plural(n) { return n + (n === 1 ? ' noite' : ' noites'); }
+
+    function linha(texto, valor, classe, sub) {
         var li = document.createElement('li');
         if (classe) { li.className = classe; }
         var t = document.createElement('span');
         t.textContent = texto;
+        if (sub) {
+            var s = document.createElement('small');
+            s.textContent = sub;
+            t.appendChild(s);
+        }
         var v = document.createElement('span');
         v.textContent = valor;
         li.appendChild(t);
@@ -46,60 +55,74 @@
 
     function atualizar() {
         // a saída nunca pode ser antes da entrada
-        fim.min = inicio.value || fim.min;
+        if (inicio.value) { fim.min = inicio.value; }
 
-        var n = noites();
+        var n = noitesEntre(inicio.value, fim.value);
         var datasOk = n >= 1;
+        noitesEl.classList.toggle('is-error', !!(inicio.value && fim.value && !datasOk));
         if (!inicio.value || !fim.value) {
             noitesEl.textContent = '';
             resumoDatas.textContent = 'Escolha as datas.';
         } else if (!datasOk) {
             noitesEl.textContent = 'A saída tem de ser depois da entrada.';
-            noitesEl.classList.add('is-error');
             resumoDatas.textContent = 'Datas por corrigir.';
         } else {
-            noitesEl.classList.remove('is-error');
-            noitesEl.textContent = n + (n === 1 ? ' noite' : ' noites');
-            resumoDatas.textContent = dia.format(data(inicio.value)) + ' a ' + dia.format(data(fim.value)) + ' · ' + n + (n === 1 ? ' noite' : ' noites');
+            noitesEl.textContent = plural(n);
+            resumoDatas.textContent = dia.format(data(inicio.value)) + ' a ' + dia.format(data(fim.value)) + ' · ' + plural(n);
         }
-
-        // animais que ficam (e o seu cartão fica destacado)
-        var ficam = [];
-        form.querySelectorAll('[data-bk-animal]').forEach(function (fs) {
-            var r = fs.querySelector('input[type="radio"]:checked');
-            var on = r && r.value !== '';
-            fs.classList.toggle('is-on', !!on);
-            if (on) {
-                ficam.push({ nome: fs.getAttribute('data-nome'), quarto: r.getAttribute('data-quarto'), preco: parseFloat(r.getAttribute('data-preco')) || 0 });
-            }
-        });
-        var servicos = [];
-        form.querySelectorAll('input[name="servicos[]"]:checked').forEach(function (c) {
-            servicos.push({ nome: c.getAttribute('data-nome'), preco: parseFloat(c.getAttribute('data-preco')) || 0 });
-        });
 
         linhas.innerHTML = '';
         var total = 0;
-        if (ficam.length === 0) {
+        var algum = false;
+
+        form.querySelectorAll('[data-bk-animal]').forEach(function (fs) {
+            var r = fs.querySelector('input[type="radio"]:checked');
+            var vem = !!(r && r.value !== '');
+            fs.classList.toggle('is-on', vem);
+
+            // datas próprias: limitadas às da reserva e, por omissão, iguais a elas
+            var proprias = fs.querySelector('[data-bk-proprias]');
+            var ai = fs.querySelector('[data-bk-a-inicio]');
+            var af = fs.querySelector('[data-bk-a-fim]');
+            ai.min = af.min = inicio.value || '';
+            ai.max = af.max = fim.value || '';
+            if (proprias.checked) {
+                if (!ai.value) { ai.value = inicio.value; }
+                if (!af.value) { af.value = fim.value; }
+                if (ai.value) { af.min = ai.value; }
+            }
+            ai.disabled = af.disabled = !proprias.checked || !vem;
+
+            if (!vem) { return; }
+            algum = true;
+
+            var entrada = proprias.checked && ai.value ? ai.value : inicio.value;
+            var saida = proprias.checked && af.value ? af.value : fim.value;
+            var na = Math.max(datasOk ? 1 : 0, noitesEntre(entrada, saida));
+            var preco = parseFloat(r.getAttribute('data-preco')) || 0;
+            var sub = preco > 0 && na ? euro.format(preco) + ' × ' + plural(na) : '';
+            if (proprias.checked && entrada && saida) {
+                sub += (sub ? ' · ' : '') + dia.format(data(entrada)) + ' a ' + dia.format(data(saida));
+            }
+            total += preco * na;
+            linhas.appendChild(linha(fs.getAttribute('data-nome') + ' · ' + r.getAttribute('data-quarto'), euro.format(preco * na), 'pg-bk-summary__animal', sub));
+
+            fs.querySelectorAll('input[type="checkbox"][data-nome]:checked').forEach(function (c) {
+                var p = parseFloat(c.getAttribute('data-preco')) || 0;
+                total += p;
+                linhas.appendChild(linha('+ ' + c.getAttribute('data-nome'), euro.format(p), 'pg-bk-summary__extra'));
+            });
+        });
+
+        if (!algum) {
             linhas.appendChild(linha('Escolha o quarto de pelo menos um animal.', '', 'pg-bk-summary__empty'));
-        } else {
-            var nn = datasOk ? n : 0;
-            ficam.forEach(function (a) {
-                var v = a.preco * nn;
-                total += v;
-                linhas.appendChild(linha(a.nome + ' · ' + a.quarto + (nn ? ' × ' + nn : ''), euro.format(v)));
-            });
-            servicos.forEach(function (s) {
-                var v = s.preco * ficam.length;
-                total += v;
-                linhas.appendChild(linha(s.nome + (ficam.length > 1 ? ' × ' + ficam.length : ''), euro.format(v), 'pg-bk-summary__extra'));
-            });
         }
         totais.forEach(function (el) { el.textContent = euro.format(datasOk ? total : 0); });
     }
 
     form.addEventListener('change', atualizar);
-    inicio.addEventListener('input', atualizar);
-    fim.addEventListener('input', atualizar);
+    form.addEventListener('input', function (e) {
+        if (e.target.type === 'date') { atualizar(); }
+    });
     atualizar();
 }());
