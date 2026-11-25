@@ -78,7 +78,7 @@ $servicos = [
         <h1 class="pg-hero__title" id="hero-title" data-reveal>Férias descansadas para si e para o seu animal.</h1>
         <p class="pg-hero__text" data-reveal>Reserve online, acompanhe o dia dele pela app e receba fotos e vídeos sempre que a equipa tiver novidades.</p>
 
-        <form class="pg-booking" data-reveal method="get" action="<?= Url::to(['/reserva/create']) ?>">
+        <form class="pg-booking" data-reveal method="get" action="<?= Url::to(['/booking/create']) ?>">
             <div class="pg-field">
                 <label for="pg-entrada">Entrada</label>
                 <input id="pg-entrada" name="entrada" type="date" required>
