@@ -325,17 +325,18 @@ body {
 }
 .pg-perks__list {
     list-style: none;
-    margin: 0;
+    margin-block: 0;
     padding-block: 28px;
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: center;
     gap: 20px 48px;
 }
 .pg-perks__list li {
     flex: 1 1 260px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 14px;
     font-size: 17px;
     font-weight: 600;
@@ -823,6 +824,108 @@ body {
 .pg-visit__hours dd { margin: 0; font-variant-numeric: tabular-nums; }
 .pg-visit__hours p { margin: 0; line-height: 1.6; color: var(--pg-ink-2); }
 
+/* ---------- Contacte-nos ---------- */
+.pg-contact__head {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 680px;
+    margin-bottom: clamp(32px, 5vw, 48px);
+}
+.pg-contact__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "channels" "form" "hours";
+    gap: 32px;
+}
+@media (min-width: 900px) {
+    .pg-contact__grid {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        grid-template-areas: "form channels" "form hours";
+        grid-template-rows: auto 1fr;
+        column-gap: 56px;
+    }
+}
+.pg-contact__card {
+    grid-area: form;
+    padding: clamp(24px, 4vw, 40px);
+    border-radius: var(--pg-radius-lg);
+    background: var(--pg-white);
+    box-shadow: 0 10px 30px rgba(15, 47, 71, .08);
+}
+.pg-contact__card-title { margin: 0 0 24px; font-size: 24px; font-weight: 700; }
+.pg-contact__field { margin-bottom: 20px; }
+.pg-contact .form-label { margin-bottom: 6px; font-weight: 600; }
+.pg-contact .form-control,
+.pg-contact .form-select {
+    min-height: 50px;
+    padding-inline: 14px;
+    border: 1.5px solid #8A9BA5;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+.pg-contact textarea.form-control { min-height: 150px; padding-block: 12px; resize: vertical; }
+.pg-contact .form-control.is-invalid,
+.pg-contact .form-select.is-invalid { border-color: var(--bs-danger); }
+.pg-contact .form-text { margin-top: 6px; color: var(--pg-ink-2); }
+.pg-contact__captcha { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.pg-contact__captcha .form-control { flex: 1 1 160px; max-width: 240px; }
+.pg-contact__captcha-img {
+    height: 50px;
+    width: auto;
+    border: 1.5px solid var(--pg-line);
+    border-radius: 10px;
+    background: var(--pg-white);
+    cursor: pointer;
+}
+.pg-contact__captcha:has(.is-invalid) ~ .invalid-feedback { display: block; } /* o wrapper quebra o seletor ~ do Bootstrap */
+.pg-contact__submit {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-top: 8px;
+}
+.pg-contact__submit p { margin: 0; font-size: 14px; color: var(--pg-ink-2); }
+
+.pg-contact__channels {
+    grid-area: channels;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.pg-contact__channels li { display: flex; gap: 16px; align-items: flex-start; }
+.pg-contact__channel-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--pg-white);
+}
+.pg-contact__channels h2 {
+    margin: 0 0 2px;
+    font: 400 15px/1.4 var(--pg-font-body);
+    letter-spacing: 0;
+    color: var(--pg-ink-2);
+}
+.pg-contact__channels a {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--pg-navy);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+.pg-contact__channels a:hover { color: var(--pg-teal-text); text-decoration: underline; }
+.pg-contact__channels p { margin: 2px 0 0; font-size: 15px; line-height: 1.5; color: var(--pg-ink-2); }
+.pg-contact__hours { grid-area: hours; align-self: start; display: flex; flex-direction: column; gap: 14px; }
+.pg-contact__hours h2 { margin: 0; font: 600 20px/1.3 var(--pg-font-body); letter-spacing: 0; }
+.pg-contact__hours a { color: var(--pg-teal-text); font-weight: 600; }
+
 /* ---------- Animações ao fazer scroll ----------
    O petgest.js põe .pg-reveal-on no <html> (só com JS e sem movimento reduzido)
    e .is-visible em cada [data-reveal] quando entra no ecrã. Dentro de um
@@ -1000,17 +1103,23 @@ body {
     .pg-auth__btn, .pg-auth .form-control { transition: none; }
 }
 .dropbtn {
-    width: 70%;
-    height: 70%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 2px solid var(--pg-teal);
     border-radius: 50%;
-    object-fit: cover;
+    background: var(--pg-navy);
+    color: var(--pg-white);
+    font: 700 16px/1 var(--pg-font-display);
     cursor: pointer;
-    border: 3px solid #3498DB;
+    transition: border-color .15s ease, transform .15s ease;
 }
 
 .dropbtn:hover {
-    border-color: #2980B9;
-    opacity: 0.9;
+    border-color: var(--pg-orange);
+    transform: scale(1.04);
 }
 
 .dropdown {
@@ -1054,3 +1163,126 @@ body {
 .show {
     display: block;
 }
+
+/* ---------- Toasts (mensagens flash por cima da página) ---------- */
+.pg-toasts {
+    position: fixed;
+    top: 96px;                      /* logo abaixo do header */
+    right: var(--pg-gutter);
+    z-index: 1080;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    width: min(420px, calc(100vw - 2 * var(--pg-gutter)));
+    pointer-events: none;           /* não bloqueia cliques na página, só nos próprios toasts */
+}
+.pg-toasts:empty { display: none; }
+.pg-toast {
+    --toast-accent: var(--pg-teal);
+    --toast-soft: var(--pg-teal-soft);
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 12px 16px 16px;
+    border-radius: 14px;
+    background: var(--pg-white);
+    color: var(--pg-navy);
+    box-shadow: 0 1px 0 rgba(15, 47, 71, .04), 0 18px 44px rgba(15, 47, 71, .22);
+    overflow: hidden;
+    pointer-events: auto;
+    transform-origin: 100% 0;
+    animation: pg-toast-in .55s cubic-bezier(.2, 1.25, .35, 1) both;
+}
+.pg-toast::before {               /* faixa de cor do tipo de mensagem */
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--toast-accent);
+}
+.pg-toast--success { --toast-accent: #1F9D6B; --toast-soft: #E3F5EC; }
+.pg-toast--info    { --toast-accent: var(--pg-teal); --toast-soft: var(--pg-teal-soft); }
+.pg-toast--warning { --toast-accent: #D9822B; --toast-soft: #FDF0E2; }
+.pg-toast--error   { --toast-accent: #C8352F; --toast-soft: #FBE7E6; }
+.pg-toast__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--toast-soft);
+    color: var(--toast-accent);
+}
+.pg-toast__icon svg { animation: pg-toast-icon .5s cubic-bezier(.2, 1.4, .4, 1) .2s both; }
+.pg-toast__msg {
+    align-self: center;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.pg-toast__msg a { color: var(--pg-teal-text); }
+.pg-toast__close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: -2px 0;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--pg-ink-2);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.pg-toast__close:hover { background: var(--pg-teal-soft); color: var(--pg-navy); }
+.pg-toast__timer {                /* barra que encolhe até o toast fechar */
+    position: absolute;
+    left: 4px;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--toast-accent);
+    opacity: .35;
+    transform-origin: left;
+    animation: pg-toast-timer var(--toast-time, 5s) linear .55s forwards;
+}
+.pg-toast:is(:hover, :focus-within) .pg-toast__timer { animation-play-state: paused; }
+/* Saída em dois tempos: desliza e desvanece, depois o espaço encolhe */
+.pg-toast.is-leaving { animation: pg-toast-out .45s cubic-bezier(.5, 0, .75, 0) forwards; pointer-events: none; }
+.pg-toast.is-collapsing {
+    min-height: 0;
+    padding-block: 0;
+    margin-bottom: -12px;           /* anula o gap do contentor */
+    transition: height .25s cubic-bezier(.4, 0, .2, 1), padding .25s cubic-bezier(.4, 0, .2, 1), margin .25s cubic-bezier(.4, 0, .2, 1);
+    height: 0 !important;
+}
+
+@keyframes pg-toast-in {
+    from { opacity: 0; transform: translateX(calc(100% + 24px)) scale(.96); }
+}
+@keyframes pg-toast-out {
+    to { opacity: 0; transform: translateX(calc(100% + 24px)) scale(.96); }
+}
+@keyframes pg-toast-icon { from { transform: scale(0) rotate(-45deg); } }
+@keyframes pg-toast-timer { to { transform: scaleX(0); } }
+
+@media (max-width: 599px) {
+    .pg-toasts { top: 84px; left: 50%; right: auto; transform: translateX(-50%); width: calc(100vw - 24px); }
+    .pg-toast { transform-origin: 50% 0; }
+    @keyframes pg-toast-in { from { opacity: 0; transform: translateY(-24px) scale(.96); } }
+    @keyframes pg-toast-out { to { opacity: 0; transform: translateY(-24px) scale(.96); } }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pg-toast, .pg-toast.is-leaving, .pg-toast__icon svg { animation-duration: .01ms; }
+    .pg-toast__timer { animation-delay: 0s; }
+}
+
+/* foto de perfil no botão da conta (a imagem não pode "roubar" o clique ao botão) */
+.dropbtn { overflow: hidden; }
+.dropbtn img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }

@@ -1,0 +1,430 @@
+/* ==========================================================================
+   Área de cliente — os meus animais (pet/index, pet/view, pet/create, pet/update)
+   Assenta em perfil.css (faixa, navegação, grupos, formulário, barra de guardar).
+   Elemento de destaque: a medalha de coleira de cada animal, que balança ao abrir
+   a página, como a etiqueta de hóspede do perfil.
+   ========================================================================== */
+
+.pg-pets__band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px 48px;
+}
+.pg-pets__band > div { max-width: 640px; }
+.pg-pets__aside { color: var(--pg-ink-2); font-weight: 400; }
+
+/* ==========================================================================
+   Medalha de coleira (_medal.php)
+   ========================================================================== */
+.pg-medal {
+    --md: 72px;
+    position: relative;
+    display: block;
+    width: var(--md);
+    padding-top: calc(var(--md) * .25);
+    transform-origin: 50% 0;     /* roda à volta do topo da argola */
+}
+.pg-medal__ring {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: calc(var(--md) * .3);
+    height: calc(var(--md) * .34);
+    transform: translateX(-50%);
+    border: max(3px, calc(var(--md) * .045)) solid #A9BCC6;
+    border-radius: 50%;
+}
+.pg-medal__disc {
+    position: relative;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    width: var(--md);
+    height: var(--md);
+    border-radius: 50%;
+    background: var(--pg-orange);
+    color: var(--pg-navy);
+    box-shadow: inset 0 0 0 calc(var(--md) * .055) rgba(255, 255, 255, .28), 0 10px 18px rgba(15, 47, 71, .16);
+}
+/* furo onde passa a argola */
+.pg-medal__disc::before {
+    content: "";
+    position: absolute;
+    top: calc(var(--md) * .1);
+    left: 50%;
+    width: calc(var(--md) * .11);
+    height: calc(var(--md) * .11);
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: var(--pg-bg);
+}
+.pg-medal__initial {
+    font: 700 calc(var(--md) * .44)/1 var(--pg-font-display);
+    letter-spacing: -0.02em;
+}
+/* a cor diz a espécie: cão laranja, gato teal, outros azul */
+.pg-medal--gato .pg-medal__disc { background: var(--pg-teal); color: var(--pg-white); }
+.pg-medal--outro .pg-medal__disc { background: var(--pg-navy); color: var(--pg-white); }
+
+/* grande: ficha e pré-visualização do formulário, com o nome gravado */
+.pg-medal--lg { --md: 200px; }
+.pg-medal--lg .pg-medal__disc {
+    gap: 6px;
+    box-shadow:
+        inset 0 0 0 10px rgba(255, 255, 255, .22),
+        inset 0 0 0 12px rgba(15, 47, 71, .12),
+        0 22px 30px rgba(0, 0, 0, .28);
+}
+.pg-medal--lg .pg-medal__initial { font-size: 76px; margin-top: 12px; }
+.pg-medal__name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 700 18px/1.2 var(--pg-font-display);
+    opacity: .85;
+}
+/* na faixa azul o furo mostra o azul por trás */
+.pg-acct__band .pg-medal__disc::before { background: var(--pg-navy); }
+.pg-acct__band .pg-medal__ring { border-color: rgba(255, 255, 255, .55); }
+
+/* ---------- Ficha: a medalha pendura-se do limite de cima da faixa ---------- */
+/* O elemento começa no limite de cima da faixa (onde o fio está preso): roda à volta desse ponto. */
+.pg-pets__hang {
+    --band-top: clamp(40px, 6vw, 72px);
+    position: relative;
+    align-self: start;
+    margin: calc(-1 * var(--band-top)) 40px 0 0;
+    padding-top: calc(var(--band-top) + 40px);
+    transform-origin: 50% 0;
+}
+.pg-pets__hang::before {             /* fio */
+    content: "";
+    position: absolute;
+    top: 0;
+    height: calc(var(--band-top) + 46px);
+    left: 50%;
+    width: 2.5px;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, .55);
+}
+@media (max-width: 767px) {
+    /* no telemóvel fica pequena, ao lado do topo, sem fio */
+    .pg-acct__band-inner:has(.pg-pets__hang) { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+    .pg-pets__hang { grid-column: 2; grid-row: 1; margin: 0; padding-top: 0; }
+    .pg-pets__hang::before { display: none; }
+    .pg-pets__hang .pg-medal--lg { --md: 88px; }
+    .pg-pets__hang .pg-medal--lg .pg-medal__disc { box-shadow: inset 0 0 0 5px rgba(255, 255, 255, .22), 0 12px 18px rgba(0, 0, 0, .28); }
+    .pg-pets__hang .pg-medal__initial { font-size: 38px; margin-top: 6px; }
+    .pg-pets__hang .pg-medal__name { display: none; }
+    .pg-acct__hello:has(+ .pg-pets__hang) { grid-column: 1 / -1; grid-row: 1; padding-right: 100px; }
+}
+
+/* ---------- Formulário: pré-visualização ---------- */
+.pg-pets__preview .pg-medal { margin: 12px auto 0; }
+.pg-acct__preview-label { margin-bottom: 8px; }
+.pg-acct__fields textarea.form-control { min-height: 0; resize: vertical; }
+.pg-acct__fields .form-select {
+    min-height: 52px;
+    border-color: var(--pg-line);
+    font-size: 17px;
+}
+.pg-acct__fields .form-text { color: var(--pg-ink-2); }
+
+/* ---------- Ficha: aviso do que falta e zona de remover ---------- */
+.pg-pets__missing { background: #FDF0E4; }
+.pg-pets__missing .pg-acct__meter-text { margin-bottom: 0; }
+.pg-pets__missing a { color: #A4531A; }
+
+.pg-pets__danger {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 32px;
+    margin-top: 16px;
+    padding: 24px;
+    border: 1.5px solid #F0C9C6;
+    border-radius: var(--pg-radius);
+}
+.pg-pets__danger h2 { margin: 0 0 4px; font: 700 20px/1.2 var(--pg-font-display); color: var(--pg-navy); }
+.pg-pets__danger p { margin: 0; color: var(--pg-ink-2); }
+.pg-pets__remove { border-color: #B42F2A; color: #B42F2A; background: none; }
+.pg-pets__remove:hover { background: #B42F2A; color: var(--pg-white); }
+.pg-pets__error {
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    border-radius: var(--pg-radius);
+    background: #FBE9E8;
+    color: #8A2420;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   Lista
+   ========================================================================== */
+.pg-pets__search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 440px;
+    min-height: 52px;
+    margin-bottom: 24px;
+    padding: 0 16px;
+    border: 1.5px solid var(--pg-line);
+    border-radius: var(--pg-radius);
+    background: var(--pg-white);
+    color: var(--pg-ink-2);
+}
+.pg-pets__search:focus-within { border-color: var(--pg-teal); box-shadow: 0 0 0 4px rgba(28, 138, 140, .18); }
+.pg-pets__search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: none;
+    font-size: 17px;
+    color: var(--pg-navy);
+}
+.pg-pets__search a { font-weight: 700; color: var(--pg-teal-text); text-decoration: none; }
+.pg-pets__none { margin: 8px 0 0; color: var(--pg-ink-2); font-size: 17px; }
+
+.pg-pets__list { margin: 0; padding: 0; list-style: none; }
+
+.pg-pet {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    grid-template-areas:
+        "medal id    actions"
+        "medal facts facts";
+    gap: 16px 24px;
+    align-items: start;
+    padding: 28px 0;
+    border-top: 1px solid var(--pg-line);
+}
+.pg-pet:first-child { border-top: 0; padding-top: 4px; }
+@media (min-width: 1100px) {
+    .pg-pet {
+        grid-template-columns: 72px minmax(0, 1fr) minmax(0, 340px) auto;
+        grid-template-areas: "medal id facts actions";
+        gap: 16px 40px;
+    }
+}
+.pg-pet__medal { grid-area: medal; display: block; text-decoration: none; }
+
+.pg-pet__id { grid-area: id; min-width: 0; padding-top: 18px; }
+.pg-pet__name {
+    margin: 0 0 6px;
+    font: 700 clamp(24px, 2.4vw, 30px)/1.1 var(--pg-font-display);
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+.pg-pet__name a { color: var(--pg-navy); text-decoration: none; }
+.pg-pet__name a:hover { color: var(--pg-teal-text); text-decoration: underline; text-underline-offset: 4px; }
+.pg-pet__breed { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; color: var(--pg-ink-2); }
+.pg-pet__kind {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--pg-teal-soft);
+    color: var(--pg-teal-dark);
+    font-size: 14px;
+    font-weight: 700;
+}
+.pg-pet__note {
+    margin: 12px 0 0;
+    max-width: 60ch;
+    padding-left: 12px;
+    border-left: 3px solid var(--pg-orange);
+    color: var(--pg-navy);
+    line-height: 1.5;
+}
+
+.pg-pet__facts {
+    grid-area: facts;
+    display: grid;
+    grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+    gap: 4px 24px;
+    margin: 0;
+}
+@media (min-width: 1100px) { .pg-pet__facts { padding-top: 22px; } }
+.pg-pet__facts > div { display: contents; }
+.pg-pet__facts dt { color: var(--pg-ink-2); font-weight: 400; }
+.pg-pet__facts dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.pg-pet__warn { color: #A4531A; font-weight: 600; }
+
+.pg-pet__actions { grid-area: actions; padding-top: 22px; }
+.pg-pet__actions a { font-weight: 700; color: var(--pg-teal-text); text-decoration: none; }
+.pg-pet__actions a:hover { text-decoration: underline; }
+
+@media (max-width: 599px) {
+    .pg-pet {
+        grid-template-columns: 56px minmax(0, 1fr);
+        grid-template-areas:
+            "medal id"
+            "facts facts"
+            "actions actions";
+        gap: 14px 16px;
+    }
+    .pg-pet .pg-medal { --md: 56px; }
+    .pg-pet__id { padding-top: 14px; }
+    .pg-pet__actions { padding-top: 0; }
+}
+
+.pg-pets__pages { margin-top: 24px; }
+.pg-pets__pages .pagination { --bs-pagination-color: var(--pg-teal-text); --bs-pagination-active-bg: var(--pg-teal-text); --bs-pagination-active-border-color: var(--pg-teal-text); }
+
+/* ==========================================================================
+   Movimento: a medalha balança uma vez ao abrir (na lista, em cascata);
+   no formulário dá um pequeno abanão quando o nome ou a raça mudam (pet.js).
+   ========================================================================== */
+@keyframes pg-medal-swing {
+    0%   { transform: rotate(-22deg); }
+    35%  { transform: rotate(12deg); }
+    60%  { transform: rotate(-6deg); }
+    80%  { transform: rotate(2deg); }
+    100% { transform: rotate(0); }
+}
+@keyframes pg-medal-nudge {
+    0%, 100% { transform: rotate(0); }
+    35% { transform: rotate(-5deg); }
+    70% { transform: rotate(2deg); }
+}
+/* Sem JS: balanço único em CSS. Com JS (pendulum.js) a medalha é um pêndulo com física e pode ser
+   agarrada com o rato; .is-physics desliga a animação CSS. */
+@media (prefers-reduced-motion: no-preference) {
+    .pg-pet .pg-medal { animation: pg-medal-swing 1.2s cubic-bezier(.3, .6, .4, 1) calc(.2s + min(var(--i, 0), 8) * .08s) both; }
+    .pg-pets__hang { animation: pg-medal-swing 1.8s cubic-bezier(.3, .6, .4, 1) .15s both; }
+    .pg-pets__preview .pg-medal { animation: pg-medal-swing 1.6s cubic-bezier(.3, .6, .4, 1) .15s both; }
+    .pg-pets .pg-acct__band--slim .pg-acct__wrap { animation: pg-acct-rise .5s cubic-bezier(.2, .7, .3, 1) both; }
+}
+.pg-medal.is-physics,
+.pg-pets__hang.is-physics {
+    animation: none !important;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+.pg-medal.is-physics .pg-medal__disc { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.pg-medal.is-dragging .pg-medal__disc,
+.pg-pets__hang.is-dragging .pg-medal__disc { cursor: grabbing; }
+.pg-pets__hang.is-physics .pg-medal__disc { cursor: grab; touch-action: pan-y; user-select: none; }
+.pg-medal__photo { -webkit-user-drag: none; pointer-events: none; }
+/* profundidade para a pequena inclinação 3D enquanto balança */
+.pg-pet, .pg-acct__photo, .pg-pets__preview, .pg-acct__band-inner:has(.pg-pets__hang) { perspective: 900px; }
+
+/* ==========================================================================
+   Fotografia na medalha
+   ========================================================================== */
+.pg-medal__photo {
+    position: absolute;
+    inset: calc(var(--md) * .06);
+    width: calc(100% - var(--md) * .12);
+    height: calc(100% - var(--md) * .12);
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--pg-teal-soft);
+}
+.pg-medal__photo[hidden] { display: none; }
+.pg-medal.has-photo .pg-medal__initial,
+.pg-medal.has-photo .pg-medal__name { visibility: hidden; }
+/* o furo fica por cima da fotografia */
+.pg-medal__disc::before { z-index: 1; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .35); }
+
+/* no formulário: a medalha pequena ao lado dos botões */
+.pg-acct__photo > .pg-medal { --md: 96px; }
+.pg-pets__pick { position: relative; overflow: hidden; }
+.pg-pets__pick input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.pg-pets__pick:focus-within { outline: 3px solid var(--pg-teal); outline-offset: 2px; }
+.pg-pets__field-error { flex-basis: 100%; margin: 4px 0 0; color: #B42F2A; font-size: 15px; font-weight: 600; }
+
+/* ==========================================================================
+   Documentos de vacinas
+   ========================================================================== */
+.pg-docs__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pg-docs__count { color: var(--pg-ink-2); font-size: 14px; font-variant-numeric: tabular-nums; }
+.pg-docs__count.is-full { color: #A4531A; font-weight: 600; }
+
+.pg-docs__list { margin: 0 0 12px; padding: 0; list-style: none; }
+.pg-docs__list:empty { display: none; }
+.pg-docs__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--pg-line);
+    border-radius: var(--pg-radius);
+    background: var(--pg-white);
+}
+.pg-docs__item + .pg-docs__item { margin-top: 8px; }
+.pg-docs__item.is-new { border-style: dashed; border-color: var(--pg-teal); }
+.pg-docs__item.is-removed { background: none; border-style: dashed; }
+.pg-docs__item.is-removed :is(.pg-docs__name, .pg-docs__size, .pg-docs__icon) { opacity: .45; text-decoration: line-through; }
+.pg-docs__icon { display: grid; color: var(--pg-teal-text); }
+.pg-docs__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--pg-navy);
+}
+a.pg-docs__name:hover { color: var(--pg-teal-text); }
+.pg-docs__size { color: var(--pg-ink-2); font-size: 14px; font-weight: 400; white-space: nowrap; }
+.pg-docs__tag { color: var(--pg-teal-text); font-size: 13px; font-weight: 700; }
+
+.pg-docs__remove,
+.pg-docs__drop-x {
+    padding: 6px 4px;
+    border: 0;
+    background: none;
+    color: #B42F2A;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.pg-docs__remove input { position: absolute; opacity: 0; pointer-events: none; }
+.pg-docs__remove:hover, .pg-docs__drop-x:hover { text-decoration: underline; }
+.pg-docs__remove:focus-within { outline: 3px solid var(--pg-teal); outline-offset: 2px; border-radius: 6px; }
+.pg-docs__remove-on { display: none; color: var(--pg-teal-text); }
+.pg-docs__item.is-removed .pg-docs__remove-on { display: inline; }
+.pg-docs__item.is-removed .pg-docs__remove-off { display: none; }
+
+.pg-docs__drop {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 24px 16px;
+    border: 2px dashed var(--pg-line);
+    border-radius: var(--pg-radius);
+    background: var(--pg-white);
+    color: var(--pg-ink-2);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+.pg-docs__drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.pg-docs__drop strong { color: var(--pg-teal-text); }
+.pg-docs__drop small { font-size: 14px; }
+.pg-docs__drop svg { color: var(--pg-teal); }
+.pg-docs__drop:hover, .pg-docs__drop.is-over { border-color: var(--pg-teal); background: var(--pg-teal-soft); }
+.pg-docs__drop:focus-within { outline: 3px solid var(--pg-teal); outline-offset: 2px; }
+.pg-docs__drop.is-full { opacity: .55; pointer-events: none; }
+
+/* na ficha: lista simples dentro da linha "Boletim de vacinas" */
+.pg-docs__list--view { margin: 0; }
+.pg-docs__list--view .pg-docs__item { grid-template-columns: auto minmax(0, 1fr) auto; padding: 8px 12px; }
+.pg-acct__rows dd .pg-docs__name { font-size: 16px; }
+.pg-acct__photo:has(> .pg-medal) .pg-acct__photo-actions { flex: 1 1 180px; }
+
+/* com JS a fotografia escolhe-se pelo botão (abre o recorte); o campo de ficheiro só aparece sem JS */
+.pg-pets__nojs-file { flex-basis: 100%; }
+.has-js .pg-pets__nojs-file { display: none; }
+#form-pet:not(.has-js) [data-foto-pick] { display: none; }

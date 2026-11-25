@@ -1,0 +1,2 @@
+# Ficheiros privados: só saem pelo PetController (pet/foto, pet/documento)
+Require all denied

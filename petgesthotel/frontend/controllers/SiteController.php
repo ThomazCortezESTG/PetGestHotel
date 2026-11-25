@@ -110,6 +110,12 @@ class SiteController extends Controller
         $model = new LoginForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            // Cliente sem perfil completo vai primeiro preenchê-lo (requisito: redirecionar para a criação do perfil após o registo)
+            $profile = Yii::$app->user->identity->userProfile;
+            if (!Yii::$app->user->can('accessBackend') && ($profile === null || !$profile->isComplete())) {
+                Yii::$app->session->setFlash('info', 'Bem-vindo! Falta só completar o seu perfil.');
+                return $this->redirect(['/perfil/update']);
+            }
             return $this->goHome();
         }
 
@@ -139,6 +145,7 @@ class SiteController extends Controller
      */
     public function actionContact(): string|Response
     {
+        $this->layout = 'landing';
         $model = new ContactForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
@@ -150,9 +157,9 @@ class SiteController extends Controller
             );
 
             if ($sent) {
-                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
+                Yii::$app->session->setFlash('success', 'Obrigado pela mensagem! Vamos responder para o seu email o mais depressa possível.');
             } else {
-                Yii::$app->session->setFlash('error', 'There was an error sending your message.');
+                Yii::$app->session->setFlash('error', 'Não foi possível enviar a mensagem. Tente novamente ou ligue-nos.');
             }
 
             return $this->refresh();

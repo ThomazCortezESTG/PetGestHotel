@@ -36,18 +36,30 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                     <a class="pg-btn pg-btn--outline" href="<?= Url::to(['/site/login']) ?>">Entrar</a>
                     <a class="pg-btn pg-btn--primary" href="<?= Url::to(['/site/signup']) ?>">Criar conta</a>
                 <?php else: ?>
+                    <?php if (Yii::$app->user->can('viewOwnBooking')): ?>
+                        <?= $this->render('_notificacoes') ?>
+                    <?php endif; ?>
                     <div class="dropdown">
-                        <img src="https://via.placeholder.com/80" alt="Menu" class="dropbtn" onclick="myFunction()">
+                        <?php
+                        $identity = Yii::$app->user->identity;
+                        $perfilMenu = $identity->userProfile;
+                        $iniciais = \common\models\UserProfile::initialsOf(trim((string) ($perfilMenu->nome ?? '')) ?: $identity->username);
+                        $fotoMenu = $perfilMenu?->getAvatarUrl();
+                        ?>
+                        <button type="button" class="dropbtn" onclick="myFunction()" aria-label="Menu da conta" aria-controls="myDropdown"
+                                data-avatar data-initials="<?= Html::encode($iniciais) ?>"><?= $fotoMenu ? Html::img($fotoMenu, ['alt' => '']) : Html::encode($iniciais) ?></button>
                         <div id="myDropdown" class="dropdown-content">
                             <span class="dropdown-user"><?= Html::encode(Yii::$app->user->identity->username) ?></span>
+                            <a href="<?= Url::to(['/perfil/index']) ?>">O meu perfil</a>
                             <?php
                             if(Yii::$app->user->can("accessBackend")){
                                 ?> <?= Html::a('Ir para o Backend', Yii::$app->urlManagerBackend->createAbsoluteUrl(['site/index'])) ?><?php
                             }
                             else if(Yii::$app->user->can("viewOwnBooking") && Yii::$app->user->can("viewOwnAnimal")){
                                 ?>
-                                <a href="#home">As minhas reservas</a>
-                                <a href="#about">Os meus animais</a>
+                                <?= Html::a('As minhas reservas', ['booking/index']) ?>
+                                <?= Html::a('Os meus animais', ['pet/index']) ?>
+                                <?= Html::a('Mensagens', ['/conversa/index']) ?>
                                 <?php
                             }
                             ?>

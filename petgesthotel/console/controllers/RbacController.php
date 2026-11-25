@@ -77,6 +77,9 @@ class RbacController extends Controller
         $auth->add($sendMessage);
         $uploadMedia = $auth->createPermission('uploadMedia');
         $auth->add($uploadMedia);
+        // reatribuir a conversa de uma reserva a outro colaborador (também criada na migração do chat)
+        $assignChat = $auth->createPermission('assignChat');
+        $auth->add($assignChat);
 
         // pesquisa
         $searchClient = $auth->createPermission('searchClient');
@@ -156,6 +159,7 @@ class RbacController extends Controller
         $auth->addChild($admin, $manageQuarto);
         $auth->addChild($admin, $manageServicoExtra);
         $auth->addChild($admin, $viewReports);
+        $auth->addChild($admin, $assignChat);
 
         // 3. Atribuir admin ao utilizador com id 1 (ajusta o id)
         $auth->assign($admin, 5);
