@@ -54,7 +54,7 @@ $anchor = static fn(string $id): string => $isHome ? '#' . $id : Url::to(['/site
                             }
                             else if(Yii::$app->user->can("viewOwnBooking") && Yii::$app->user->can("viewOwnAnimal")){
                                 ?>
-                                <a href="#home">As minhas reservas</a>
+                                <?= Html::a('As minhas reservas', ['booking/index']) ?>
                                 <?= Html::a('Os meus animais', ['pet/index']) ?>
                                 <?php
                             }

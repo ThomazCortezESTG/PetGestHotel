@@ -9,7 +9,7 @@ use yii\helpers\Url;
     <!-- Brand Logo -->
     <a href="<?= Url::to(['/site/index']) ?>" class="brand-link">
         <img src="<?=$assetDir?>/img/AdminLTELogo.png" alt="PetGestHotel Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-        <span class="brand-text font-weight-light">PetGestHotel</span>
+        <span class="brand-text font-weight-light"><?= Html::a('PetGestHotel', Yii::$app->urlManagerFrontend->createAbsoluteUrl(['site/index'])) ?></span>
     </a>
 
     <!-- Sidebar -->
