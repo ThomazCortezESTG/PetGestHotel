@@ -59,8 +59,8 @@ class Animal extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['data', 'vacinas', 'observacoes', 'id_raca_principal', 'id_raca_secundaria'], 'default', 'value' => null],
-            [['nome'], 'required'],
+            [['data', 'vacinas', 'observacoes', 'id_raca_secundaria'], 'default', 'value' => null],
+            [['nome', 'id_raca_principal'], 'required'],
             [['data'], 'safe'],
             [['id_raca_principal', 'id_raca_secundaria'], 'integer'],
             [['nome'], 'string', 'max' => 100],
