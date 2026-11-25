@@ -119,6 +119,17 @@
       <path value="$PROJECT_DIR$/petgesthotel/vendor/almasaeed2010/adminlte" />
       <path value="$PROJECT_DIR$/petgesthotel/vendor/hail812/yii2-adminlte3" />
       <path value="$PROJECT_DIR$/petgesthotel/vendor/yiisoft/yii2-bootstrap4" />
+<<<<<<< Updated upstream
+=======
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/kartik-v/yii2-krajee-base" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/sebastian/file-filter" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/kartik-v/yii2-widget-datepicker" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/sebastian/git-state" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/php-mqtt/client" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/myclabs/php-enum" />
+      <path value="$PROJECT_DIR$/petgesthotel/vendor/npm-asset/paho-mqtt" />
+>>>>>>> Stashed changes
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

@@ -29,7 +29,7 @@ class UserController extends Controller
                     'rules' => [
                         [
                             'allow' => true,
-                            'roles' => ['admin'], // Troca 'admin' pelo nome exato do papel na tua tabela auth_item
+                            'roles' => ['admin','colaborador'],
                         ],
                     ],
                 ],
