@@ -10,8 +10,7 @@ declare(strict_types=1);
  * @var common\models\Quarto[] $quartos
  * @var common\models\Animal[] $animais
  * @var common\models\ServicosExtras[] $servicos
- * @var array $escolhasQuartos
- * @var array $escolhasServicos
+ * @var array $escolhas [id_animal => escolhas desse animal]
  */
 
 use frontend\assets\BookingAsset;
@@ -37,7 +36,7 @@ $this->title = 'Alterar reserva | PetGestHotel';
     <div class="pg-acct__wrap pg-acct__body">
         <?= $this->render('@frontend/views/perfil/_nav', ['active' => 'reservas']) ?>
         <div class="pg-acct__main">
-            <?= $this->render('_form', compact('model', 'quartos', 'animais', 'servicos', 'escolhasQuartos', 'escolhasServicos')) ?>
+            <?= $this->render('_form', compact('model', 'quartos', 'animais', 'servicos', 'escolhas')) ?>
         </div>
     </div>
 </div>

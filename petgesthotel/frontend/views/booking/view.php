@@ -39,13 +39,11 @@ $ordem = array_keys($passos);
 $atual = array_search($model->status, $ordem, true);
 $interrompida = $atual === false; // rejeitada ou cancelada
 
-// Preço discriminado (igual ao Booking::calcularPreco)
-$servicosPorAnimal = [];
+// as linhas já têm a reserva carregada (para as datas próprias de cada animal)
 foreach ($linhas as $l) {
-    foreach ($l->servicos as $s) {
-        $servicosPorAnimal[$s->id] = ['nome' => $s->nome, 'preco' => (float) $s->preco, 'n' => ($servicosPorAnimal[$s->id]['n'] ?? 0) + 1];
-    }
+    $l->populateRelation('booking', $model);
 }
+$datasAnimal = static fn ($l): string => $fmt->asDate($l->getEntrada(), 'd MMM') . ' a ' . $fmt->asDate($l->getSaida(), 'd MMM');
 ?>
 
 <div class="pg-acct pg-bk">
@@ -127,7 +125,12 @@ foreach ($linhas as $l) {
                             </a>
                             <div>
                                 <a class="pg-bk-guest__name" href="<?= Url::to(['/pet/view', 'id' => $a->id]) ?>"><?= Html::encode($a->nome) ?></a>
-                                <p class="pg-bk-guest__room">Quarto <?= Html::encode(ucfirst((string) ($l->quarto->categoria ?? ''))) ?></p>
+                                <p class="pg-bk-guest__room">
+                                    Quarto <?= Html::encode(ucfirst((string) ($l->quarto->categoria ?? ''))) ?>
+                                    <?php if ($l->temDatasProprias()): ?>
+                                        <span class="pg-bk-guest__dates"><?= $datasAnimal($l) ?> · <?= $l->getNoites() ?> <?= $l->getNoites() === 1 ? 'noite' : 'noites' ?></span>
+                                    <?php endif; ?>
+                                </p>
                                 <?php if ($l->servicos): ?>
                                     <p class="pg-bk-guest__extras"><?= Html::encode(implode(' · ', array_map(static fn ($s) => $s->nome, $l->servicos))) ?></p>
                                 <?php endif; ?>
@@ -142,17 +145,18 @@ foreach ($linhas as $l) {
                 <div class="pg-acct__group-head"><h2 id="h-preco">Preço</h2><p>Quartos pelas noites da estadia, mais os serviços extra de cada animal.</p></div>
                 <div class="pg-bk-bill">
                     <ul>
-                        <?php foreach ($linhas as $l): ?>
+                        <?php foreach ($linhas as $l): $n = $l->getNoites(); ?>
                             <li>
-                                <span><?= Html::encode($l->animal->nome) ?> · Quarto <?= Html::encode(ucfirst((string) ($l->quarto->categoria ?? ''))) ?> <small><?= $euro($l->quarto->preco ?? 0) ?> × <?= $noites ?> <?= $noites === 1 ? 'noite' : 'noites' ?></small></span>
-                                <span><?= $euro(($l->quarto->preco ?? 0) * $noites) ?></span>
+                                <span><?= Html::encode($l->animal->nome) ?> · Quarto <?= Html::encode(ucfirst((string) ($l->quarto->categoria ?? ''))) ?>
+                                    <small><?= $euro($l->quarto->preco ?? 0) ?> × <?= $n ?> <?= $n === 1 ? 'noite' : 'noites' ?><?= $l->temDatasProprias() ? ' (' . $datasAnimal($l) . ')' : '' ?></small></span>
+                                <span><?= $euro(($l->quarto->preco ?? 0) * $n) ?></span>
                             </li>
-                        <?php endforeach; ?>
-                        <?php foreach ($servicosPorAnimal as $s): ?>
-                            <li class="pg-bk-bill__extra">
-                                <span><?= Html::encode($s['nome']) ?><?php if ($s['n'] > 1): ?> <small><?= $euro($s['preco']) ?> × <?= $s['n'] ?> animais</small><?php endif; ?></span>
-                                <span><?= $euro($s['preco'] * $s['n']) ?></span>
-                            </li>
+                            <?php foreach ($l->servicos as $s): ?>
+                                <li class="pg-bk-bill__extra">
+                                    <span>+ <?= Html::encode($s->nome) ?> <small>para <?= Html::encode($l->animal->nome) ?></small></span>
+                                    <span><?= $euro($s->preco) ?></span>
+                                </li>
+                            <?php endforeach; ?>
                         <?php endforeach; ?>
                     </ul>
                     <p class="pg-bk-bill__total"><span>Total</span><strong><?= $euro($model->preco ?? 0) ?></strong></p>

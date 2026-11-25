@@ -122,29 +122,82 @@ class Booking extends \yii\db\ActiveRecord
         return $this->hasOne(User::class, ['id' => 'id_user']);
     }
 
+    /**
+     * Preço = para cada animal, (preço do quarto × noites desse animal) + os serviços desse animal.
+     * As noites de cada animal são as datas dele, ou as da reserva se não tiver datas próprias.
+     */
     public function calcularPreco()
     {
-        $inicio = new \DateTime($this->datainicio);
-        $fim = new \DateTime($this->datafim);
-        $dias = max(1, $inicio->diff($fim)->days);
+        $linhas = BookingAnimalQuarto::find()
+            ->with(['quarto', 'servicos'])
+            ->where(['id_booking' => $this->id])
+            ->all();
 
-        // um quarto por animal: soma o preço de cada linha
-        $totalQuartos = (new \yii\db\Query())
-            ->from('booking_animal_quarto baq')
-            ->innerJoin('quarto q', 'q.id = baq.id_quarto')
-            ->where(['baq.id_booking' => $this->id])
-            ->sum('q.preco') ?: 0;
+        $total = 0.0;
+        foreach ($linhas as $l) {
+            $l->populateRelation('booking', $this);
+            $total += (float) ($l->quarto->preco ?? 0) * $l->getNoites();
+            foreach ($l->servicos as $s) {
+                $total += (float) $s->preco;
+            }
+        }
 
-        // serviços extras (uma linha por animal e por serviço)
-        $totalServicos = (new \yii\db\Query())
-            ->from('booking_animal_servico bas')
-            ->innerJoin('booking_animal_quarto baq', 'baq.id = bas.id_booking_animal')
-            ->innerJoin('servicos_extras se', 'se.id = bas.id_servico')
-            ->where(['baq.id_booking' => $this->id])
-            ->sum('se.preco') ?: 0;
-
-        $this->preco = ($totalQuartos * $dias) + $totalServicos;
+        $this->preco = $total;
         $this->save(false, ['preco']);
+    }
+
+    /**
+     * Animais que já estão noutra reserva ativa (pendente, confirmada ou em curso) em dias que se sobrepõem.
+     * O dia de saída fica livre: sair a dia 5 e entrar noutra estadia a dia 5 não é sobreposição.
+     *
+     * @param array $animais [id_animal => [entrada, saida]] (datas Y-m-d)
+     * @param int|null $ignorar id da reserva a ignorar (a própria, ao editar ou aceitar)
+     * @return array [id_animal => 'O Bobi já tem a reserva de 28 nov a 2 dez nesses dias.']
+     */
+    public static function sobreposicoes(array $animais, ?int $ignorar = null): array
+    {
+        if ($animais === []) {
+            return [];
+        }
+        $linhas = (new \yii\db\Query())
+            ->select([
+                'baq.id_animal',
+                'a.nome',
+                'b.id',
+                'entrada' => 'COALESCE(baq.datainicio, b.datainicio)',
+                'saida' => 'COALESCE(baq.datafim, b.datafim)',
+            ])
+            ->from(['baq' => BookingAnimalQuarto::tableName()])
+            ->innerJoin(['b' => self::tableName()], 'b.id = baq.id_booking')
+            ->innerJoin(['a' => Animal::tableName()], 'a.id = baq.id_animal')
+            ->where(['baq.id_animal' => array_keys($animais)])
+            ->andWhere(['b.status' => [self::STATUS_PENDENTE, self::STATUS_CONFIRMADA, self::STATUS_EM_CURSO]])
+            ->andFilterWhere(['<>', 'b.id', $ignorar])
+            ->all();
+
+        $fmt = Yii::$app->formatter;
+        $conflitos = [];
+        foreach ($linhas as $l) {
+            [$entrada, $saida] = $animais[$l['id_animal']];
+            if ($l['entrada'] < $saida && $l['saida'] > $entrada && !isset($conflitos[$l['id_animal']])) {
+                $conflitos[$l['id_animal']] = $l['nome'] . ' já tem a reserva de '
+                    . $fmt->asDate($l['entrada'], 'd MMM') . ' a ' . $fmt->asDate($l['saida'], 'd MMM')
+                    . ' nesses dias.';
+            }
+        }
+        return $conflitos;
+    }
+
+    /**
+     * Sobreposições dos animais desta reserva com outras reservas ativas (usado ao aceitar no back-office).
+     */
+    public function sobreposicoesComOutras(): array
+    {
+        $animais = [];
+        foreach ($this->bookingAnimalQuartos as $l) {
+            $animais[$l->id_animal] = [$l->getEntrada(), $l->getSaida()];
+        }
+        return self::sobreposicoes($animais, $this->id);
     }
 
     // ===================================================================== chat (não apagar)
@@ -198,6 +251,11 @@ class Booking extends \yii\db\ActiveRecord
     {
         if (!Conversa::podeSerResponsavel($idColaborador)) {
             $this->addError('status', 'O responsável tem de ser um colaborador ativo.');
+            return false;
+        }
+        // o mesmo animal não pode estar em duas estadias ao mesmo tempo
+        if ($conflitos = $this->sobreposicoesComOutras()) {
+            $this->addError('status', 'Não pode aceitar: ' . implode(' ', $conflitos));
             return false;
         }
         if (!$this->mudarEstado(self::STATUS_CONFIRMADA)) {

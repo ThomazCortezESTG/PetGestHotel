@@ -79,6 +79,10 @@ $cores = [
                                 </td>
                                 <td>
                                     <?= Html::encode($baq->quarto->categoria ?? '—') ?>
+                                    <?php $baq->populateRelation('booking', $booking); ?>
+                                    <?php if ($baq->temDatasProprias()): ?>
+                                        <br><span class="badge badge-info"><?= $fmt->asDate($baq->getEntrada(), 'dd/MM') ?> – <?= $fmt->asDate($baq->getSaida(), 'dd/MM') ?> · <?= $baq->getNoites() ?> <?= $baq->getNoites() === 1 ? 'noite' : 'noites' ?></span>
+                                    <?php endif; ?>
                                     <?php if ($baq->quarto): ?><br><small class="text-muted"><?= $fmt->asCurrency($baq->quarto->preco, 'EUR') ?>/noite</small><?php endif; ?>
                                 </td>
                                 <td>
