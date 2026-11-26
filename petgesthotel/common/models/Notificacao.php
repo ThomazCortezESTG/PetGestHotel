@@ -14,9 +14,9 @@ use yii\helpers\Url;
  * Tipos:
  * - "mensagem" (ref_id = conversa): mensagens novas do hotel. Enquanto não é lida, as mensagens
  *   seguintes da mesma conversa juntam-se na mesma notificação ("3 mensagens novas de Ana").
+ * - "reserva" (ref_id = reserva): a reserva foi confirmada, rejeitada, teve check-in ou check-out.
  *
- * Para acrescentar um tipo (ex.: reserva confirmada): uma constante, um método como novaMensagem()
- * e o destino em url().
+ * Para acrescentar um tipo: uma constante, um método como novaMensagem() e o destino em url().
  *
  * Tempo real: cada notificação nova ou alterada é avisada no tópico <prefixo>/utilizador/<id>.
  *
@@ -34,10 +34,62 @@ use yii\helpers\Url;
 class Notificacao extends ActiveRecord
 {
     public const TIPO_MENSAGEM = 'mensagem';
+    public const TIPO_RESERVA = 'reserva';
 
     public static function tableName(): string
     {
         return '{{%notificacao}}';
+    }
+
+    /**
+     * Avisa o cliente de que a reserva mudou de estado (chamado em Booking::afterSave).
+     * Estados sem aviso (ex.: cancelada, que é o próprio cliente a fazer) não criam nada.
+     */
+    public static function mudancaReserva(Booking $booking): ?self
+    {
+        $fmt = \Yii::$app->formatter;
+        $nomes = array_map(static fn (Animal $a) => $a->nome, $booking->animais);
+        $animais = $nomes === [] ? 'o seu animal' : implode(', ', $nomes);
+        $datas = $fmt->asDate($booking->datainicio, 'd MMM') . ' a ' . $fmt->asDate($booking->datafim, 'd MMM');
+
+        switch ($booking->status) {
+            case Booking::STATUS_CONFIRMADA:
+                $resp = $booking->conversa?->colaborador;
+                $titulo = 'Reserva confirmada';
+                $texto = 'A estadia de ' . $animais . ' (' . $datas . ') está confirmada.'
+                    . ($resp ? ' Quem vai acompanhar é ' . Conversa::pessoa($resp)['nome'] . ': pode falar diretamente em Mensagens.' : '');
+                break;
+            case Booking::STATUS_REJEITADA:
+                $titulo = 'Reserva não aceite';
+                $texto = 'A reserva de ' . $datas . ' não foi aceite'
+                    . ($booking->motivo_rejeicao ? ': ' . $booking->motivo_rejeicao : '.');
+                break;
+            case Booking::STATUS_EM_CURSO:
+                $titulo = 'Check-in feito';
+                $texto = ucfirst($animais) . (count($nomes) > 1 ? ' já estão' : ' já está') . ' no hotel. Pode acompanhar a estadia em Mensagens.';
+                break;
+            case Booking::STATUS_CONCLUIDA:
+                $titulo = 'Estadia terminada';
+                $texto = 'O check-out de ' . $animais . ' está feito. Obrigado pela confiança!';
+                break;
+            default:
+                return null;
+        }
+
+        $n = new self([
+            'id_user' => $booking->id_user,
+            'tipo' => self::TIPO_RESERVA,
+            'ref_id' => $booking->id,
+            'titulo' => $titulo,
+            'texto' => mb_strimwidth($texto, 0, 500, '…'),
+            'quantidade' => 1,
+            'lida' => false,
+            'created_at' => time(),
+            'updated_at' => time(),
+        ]);
+        $n->save(false);
+        Mqtt::publicar(self::topico((int) $booking->id_user), ['tipo' => 'notificacao', 'notificacao' => $n->id]);
+        return $n;
     }
 
     public static function topico(int $idUser): string
@@ -119,6 +171,7 @@ class Notificacao extends ActiveRecord
     {
         return match ($this->tipo) {
             self::TIPO_MENSAGEM => Url::to(['/conversa/view', 'id' => $this->ref_id]),
+            self::TIPO_RESERVA => Url::to(['/booking/view', 'id' => $this->ref_id]),
             default => null,
         };
     }
