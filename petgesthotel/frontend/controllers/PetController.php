@@ -32,7 +32,7 @@ class PetController extends Controller
                 'access' => [
                     'class' => AccessControl::class,
                     'rules' => [
-                        ['allow' => true, 'roles' => ['@']],
+                        ['allow' => true, 'roles' => ['cliente']],
                     ],
                 ],
                 'verbs' => [

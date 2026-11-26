@@ -30,7 +30,7 @@ class ConversaController extends Controller
             'access' => [
                 'class' => AccessControl::class,
                 'rules' => [
-                    ['allow' => true, 'roles' => ['viewOwnBooking']],
+                    ['allow' => true, 'roles' => ['cliente']],
                 ],
             ],
             'verbs' => [
