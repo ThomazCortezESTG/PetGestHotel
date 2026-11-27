@@ -31,7 +31,7 @@ class SiteController extends Controller
                         'allow' => true,
                     ],
                     [
-                        'actions' => ['logout', 'index'],
+                        'actions' => ['logout', 'index' , 'contact'],
                         'allow' => true,
                         'roles' => ['accessBackend'],
                     ],
@@ -66,6 +66,16 @@ class SiteController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index');
+    }
+
+    /**
+     * Displays contact and support page.
+     *
+     * @return string
+     */
+    public function actionContact()
+    {
+        return $this->render('contact');
     }
 
     /**
