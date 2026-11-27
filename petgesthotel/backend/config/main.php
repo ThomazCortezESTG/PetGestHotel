@@ -13,17 +13,15 @@ return [
     'controllerNamespace' => 'backend\controllers',
     'bootstrap' => ['log'],
     'modules' => [
-        // API REST para a app móvel (ver backend/modules/api/Module.php)
         'api' => [
-            'class' => \backend\modules\api\Module::class,
+            'class' => 'backend\modules\api\Module',
         ],
     ],
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
-            // a API recebe JSON no corpo dos pedidos
             'parsers' => [
-                'application/json' => \yii\web\JsonParser::class,
+                'application/json' => 'yii\web\JsonParser',
             ],
         ],
         'log' => [
@@ -42,54 +40,18 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                // ---- API (app móvel) ----
                 'POST api/auth/login' => 'api/auth/login',
-                'POST api/auth/logout' => 'api/auth/logout',
-                'GET api/auth/me' => 'api/auth/me',
                 [
-                    'class' => \yii\rest\UrlRule::class,
-                    'controller' => ['api/animais' => 'api/animal'],
-                    'tokens' => ['{id}' => '<id:\\d+>', '{doc}' => '<doc:\\d+>'],
-                    'extraPatterns' => [
-                        'GET,HEAD {id}/documentos' => 'documentos',
-                        'GET,HEAD {id}/documentos/{doc}' => 'documento',
-                        'GET,HEAD {id}/foto' => 'foto',
-                    ],
-                ],
-                [
-                    'class' => \yii\rest\UrlRule::class,
-                    'controller' => ['api/racas' => 'api/raca'],
-                    'only' => ['index', 'view', 'options'],
-                ],
-                [
-                    'class' => \yii\rest\UrlRule::class,
-                    'controller' => ['api/conversas' => 'api/conversa'],
-                    'only' => ['index', 'view', 'mensagens', 'enviar', 'lida', 'anexo'],
-                    'tokens' => ['{id}' => '<id:\\d+>', '{mensagem}' => '<mensagem:\\d+>'],
-                    'extraPatterns' => [
-                        'GET,HEAD {id}/mensagens' => 'mensagens',
-                        'POST {id}/mensagens' => 'enviar',
-                        'POST {id}/lida' => 'lida',
-                        'GET,HEAD {id}/mensagens/{mensagem}/anexo' => 'anexo',
-                    ],
-                ],
-                [
-                    'class' => \yii\rest\UrlRule::class,
-                    'controller' => ['api/notificacoes' => 'api/notificacao'],
-                    'only' => ['index', 'lida', 'lidas'],
-                    'extraPatterns' => [
-                        'POST lidas' => 'lidas',
-                        'POST {id}/lida' => 'lida',
-                    ],
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => ['api/animal', 'api/booking', 'api/historico'],
                 ],
             ],
         ],
     ],
     'params' => $params,
     'as access' => [
-        'class' => 'yii\filters\AccessControl',
-        // a API tem autenticação própria (token), não exige o papel accessBackend
         'except' => ['api/*'],
+        'class' => 'yii\filters\AccessControl',
         'rules' => [
             [
                 'actions' => ['login', 'error'],

@@ -11,7 +11,6 @@ use Yii;
  * @property string $categoria
  * @property int $capacidade
  * @property string|null $tier
- * @property float $preco
  *
  * @property BookingAnimalQuarto[] $bookingAnimalQuartos
  */
@@ -34,10 +33,8 @@ class Quarto extends \yii\db\ActiveRecord
     {
         return [
             [['tier'], 'default', 'value' => null],
-            [['preco'], 'default', 'value' => 0.00],
             [['categoria', 'capacidade'], 'required'],
             [['capacidade'], 'integer'],
-            [['preco'], 'number'],
             [['categoria', 'tier'], 'string', 'max' => 50],
         ];
     }
@@ -52,7 +49,6 @@ class Quarto extends \yii\db\ActiveRecord
             'categoria' => 'Categoria',
             'capacidade' => 'Capacidade',
             'tier' => 'Tier',
-            'preco' => 'Preco',
         ];
     }
 
