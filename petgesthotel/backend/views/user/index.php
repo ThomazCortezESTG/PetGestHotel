@@ -46,6 +46,15 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
             'email:email',
+            [
+                'label' => 'Papel',
+                'format' => 'raw',
+                'value' => function ($model) {
+                    $papel = \common\components\Papeis::de((int) $model->id);
+                    $cor = ['admin' => 'danger', 'colaborador' => 'primary', 'cliente' => 'secondary'][$papel] ?? 'light';
+                    return '<span class="badge badge-' . $cor . '">' . Html::encode(\common\components\Papeis::nome($papel)) . '</span>';
+                },
+            ],
             'status',
             //'auth_key',
             //'password_hash',

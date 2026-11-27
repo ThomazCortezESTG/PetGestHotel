@@ -82,7 +82,8 @@ class Conversa extends ActiveRecord
         } else {
             $texto = 'Reserva confirmada! Em breve um colaborador vai acompanhar a estadia ' . $deQuem . '.';
         }
-        $conversa->mensagemSistema($texto);
+        // a notificação "reserva confirmada" (Booking::afterSave) já avisa o cliente
+        $conversa->mensagemSistema($texto, false);
 
         return $conversa;
     }
@@ -116,6 +117,23 @@ class Conversa extends ActiveRecord
     {
         $auth = Yii::$app->authManager;
         return $auth->checkAccess($idUser, 'colaborador') && User::find()->where(['id' => $idUser, 'status' => User::STATUS_ACTIVE])->exists();
+    }
+
+    /**
+     * Quantas reservas ativas (confirmadas ou em curso) cada colaborador acompanha: [id => n].
+     * Ajuda a escolher a quem entregar uma reserva nova.
+     */
+    public static function cargaPorColaborador(): array
+    {
+        return array_map('intval', self::find()
+            ->alias('c')
+            ->innerJoin(['b' => Booking::tableName()], 'b.id = c.id_booking')
+            ->select(['n' => 'COUNT(*)', 'c.id_colaborador'])
+            ->where(['not', ['c.id_colaborador' => null]])
+            ->andWhere(['b.status' => [Booking::STATUS_CONFIRMADA, Booking::STATUS_EM_CURSO]])
+            ->groupBy('c.id_colaborador')
+            ->indexBy('id_colaborador')
+            ->column());
     }
 
     /**
@@ -229,7 +247,11 @@ class Conversa extends ActiveRecord
         return $mensagem;
     }
 
-    public function mensagemSistema(string $texto): Mensagem
+    /**
+     * @param bool $notificar false quando já há outra notificação para o mesmo acontecimento
+     *                        (ex.: "reserva confirmada" já avisa o cliente de que a conversa abriu)
+     */
+    public function mensagemSistema(string $texto, bool $notificar = true): Mensagem
     {
         $mensagem = new Mensagem([
             'id_conversa' => $this->id,
@@ -239,11 +261,33 @@ class Conversa extends ActiveRecord
             'created_at' => time(),
         ]);
         $mensagem->save(false);
-        $this->depoisDeNovaMensagem($mensagem);
+        $this->depoisDeNovaMensagem($mensagem, $notificar);
         return $mensagem;
     }
 
-    private function depoisDeNovaMensagem(Mensagem $mensagem): void
+    /**
+     * Quem deixa de ser da equipa (ou é desativado) larga as conversas das reservas ainda ativas:
+     * ficam "sem responsável" até um admin as atribuir, e o cliente vê isso no chat.
+     */
+    public static function largarResponsavel(int $idUser): int
+    {
+        $conversas = self::find()
+            ->alias('c')
+            ->innerJoinWith('booking b')
+            ->where(['c.id_colaborador' => $idUser])
+            ->andWhere(['b.status' => [Booking::STATUS_CONFIRMADA, Booking::STATUS_EM_CURSO]])
+            ->all();
+        foreach ($conversas as $c) {
+            $nome = self::pessoa($c->colaborador)['nome'];
+            $c->id_colaborador = null;
+            $c->save(false, ['id_colaborador']);
+            unset($c->colaborador);
+            $c->mensagemSistema($nome . ' deixou de acompanhar esta reserva. Em breve outro colaborador vai continuar a conversa consigo.');
+        }
+        return count($conversas);
+    }
+
+    private function depoisDeNovaMensagem(Mensagem $mensagem, bool $notificar = true): void
     {
         $this->updated_at = $mensagem->created_at;
         $this->save(false, ['updated_at']);
@@ -255,7 +299,7 @@ class Conversa extends ActiveRecord
 
         // o cliente é avisado de tudo o que não foi ele a escrever (o responsável vê o contador no back-office)
         $idCliente = (int) $this->booking->id_user;
-        if ($mensagem->id_autor === null || (int) $mensagem->id_autor !== $idCliente) {
+        if ($notificar && ($mensagem->id_autor === null || (int) $mensagem->id_autor !== $idCliente)) {
             Notificacao::novaMensagem($this, $mensagem);
         }
     }

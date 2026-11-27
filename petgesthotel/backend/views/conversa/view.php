@@ -22,12 +22,6 @@ $this->title = 'Conversa com ' . $pCliente['nome'];
 $this->params['breadcrumbs'][] = ['label' => 'Conversas', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $pCliente['nome'];
 ?>
-<?php foreach (['success', 'error'] as $tipo): ?>
-    <?php if (Yii::$app->session->hasFlash($tipo)): ?>
-        <div class="alert alert-<?= $tipo === 'error' ? 'danger' : 'success' ?>"><?= Html::encode(Yii::$app->session->getFlash($tipo)) ?></div>
-    <?php endif; ?>
-<?php endforeach; ?>
-
 <div class="row">
     <div class="col-lg-8 mb-3">
         <?= $this->render('@common/views/chat/_chat', [
