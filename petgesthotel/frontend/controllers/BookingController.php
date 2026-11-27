@@ -35,7 +35,6 @@ class BookingController extends Controller
                 'access' => [
                     'class' => AccessControl::class,
                     'rules' => [
-                        ['allow' => true, 'roles' => ['cliente']],
                         ['allow' => true, 'actions' => ['create'], 'roles' => ['createBooking']],
                         ['allow' => true, 'actions' => ['update'], 'roles' => ['editOwnBooking']],
                         ['allow' => true, 'actions' => ['cancelar'], 'roles' => ['cancelOwnBooking']],

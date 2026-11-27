@@ -13,6 +13,7 @@ use Yii;
  * @property string|null $tipo
  *
  * @property Animal[] $animals
+ * @property Animal[] $animals0
  */
 class Raca extends \yii\db\ActiveRecord
 {
@@ -67,7 +68,17 @@ class Raca extends \yii\db\ActiveRecord
      */
     public function getAnimals()
     {
-        return $this->hasMany(Animal::class, ['id_raca' => 'id']);
+        return $this->hasMany(Animal::class, ['id_raca_principal' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Animals0]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAnimals0()
+    {
+        return $this->hasMany(Animal::class, ['id_raca_secundaria' => 'id']);
     }
 
 
