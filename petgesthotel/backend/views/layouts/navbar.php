@@ -2,8 +2,6 @@
 
 use yii\helpers\Html;
 
-/** @var string $assetDir */
-
 ?>
 <!-- Navbar -->
 <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -16,7 +14,7 @@ use yii\helpers\Html;
             <a href="<?=\yii\helpers\Url::home()?>" class="nav-link">Home</a>
         </li>
         <li class="nav-item d-none d-sm-inline-block">
-            <a href="<?= \yii\helpers\Url::to(['/site/contact']) ?>" class="nav-link">Contactos e Suporte</a>
+            <a href="#" class="nav-link">Contact</a>
         </li>
         <li class="nav-item dropdown">
             <a id="dropdownSubMenu1" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle">Dropdown</a>

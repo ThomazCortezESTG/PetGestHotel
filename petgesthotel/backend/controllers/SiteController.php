@@ -31,7 +31,7 @@ class SiteController extends Controller
                         'allow' => true,
                     ],
                     [
-                        'actions' => ['logout', 'index','contact'],
+                        'actions' => ['logout', 'index'],
                         'allow' => true,
                         'roles' => ['accessBackend'],
                     ],
@@ -57,30 +57,13 @@ class SiteController extends Controller
             ],
         ];
     }
-    public function actionContact()
-    {
-        if (Yii::$app->request->isPost) {
-            $assunto = Yii::$app->request->post('assunto');
-            $mensagem = Yii::$app->request->post('mensagem');
-
-            if (!empty($assunto) && !empty($mensagem)) {
-                // Aqui podes futuramente guardar numa tabela 'mensagem' ou enviar email
-                Yii::$app->session->setFlash('success', 'Ocorrência enviada com sucesso para a administração!');
-                return $this->refresh();
-            }
-
-            Yii::$app->session->setFlash('error', 'Por favor, preencha o assunto e a mensagem.');
-        }
-
-        return $this->render('contact');
-    }
 
     /**
      * Displays homepage.
      *
      * @return string
      */
-    public function actionIndex()
+    public function actionIndex(): string
     {
         return $this->render('index');
     }

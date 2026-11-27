@@ -38,7 +38,7 @@ return [
         'user' => [
             'class' => \yii\web\User::class,
             'identityClass' => 'common\models\User',
-            'enableAutoLogin' => true,
+            'enableAutoLogin' => false,
             'identityCookie' => ['name' => '_identity', 'httpOnly' => true, 'path' => '/'],
         ],
         'session' => [
